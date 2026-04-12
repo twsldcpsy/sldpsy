@@ -1,0 +1,57 @@
+# 通用部署到 GitHub Pages 的腳本
+name: Deploy static content to Pages
+
+on:
+  # 推送到主分支時觸發
+  push:
+    branches: ["main"]
+
+  # 允許從 Actions 標籤手動執行此工作流程
+  workflow_dispatch:
+
+# 設定 GITHUB_TOKEN 的權限，以允許部署到 GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 允許一個並行執行的工作流程，並略過進行中的執行，但不取消它
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # 單一建置與部署作業
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build
+        run: npm run build
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # 上傳我們建立的 dist 目錄
+          path: './dist'
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
