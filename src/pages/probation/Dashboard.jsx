@@ -5,7 +5,7 @@ import Button from '../../components/Button';
 import { supabase } from '../../supabase';
 import BulletinBoardWidget from '../../components/BulletinBoardWidget';
 
-import JuvenileDatabase from './JuvenileDatabaseComponent';
+import CaseDatabase from './CaseDatabaseComponent';
 import PsychologistDatabase from './PsychologistDatabaseComponent';
 import ProbationOfficerDatabase from './ProbationOfficerDatabaseComponent';
 import BookingManagement from './BookingManagementComponent';
@@ -98,7 +98,7 @@ const Maintenance = () => {
 
     const tabs = [
         { id: 'bookings', label: '預約管理', icon: FileText },
-        { id: 'juveniles', label: '少年資料庫維護', icon: User },
+        { id: 'juveniles', label: '個案資料庫維護', icon: User },
         { id: 'psychologists', label: '心理師資料庫維護', icon: User },
         { id: 'officers', label: '保護官資料庫維護', icon: Settings },
         { id: 'stats_adv', label: '進階統計', icon: Database },
@@ -127,7 +127,7 @@ const Maintenance = () => {
 
             <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                 {subTab === 'bookings' && <BookingManagement allowExport={true} showReimbursement={true} />}
-                {subTab === 'juveniles' && <JuvenileDatabase />}
+                {subTab === 'juveniles' && <CaseDatabase />}
                 {subTab === 'psychologists' && <PsychologistDatabase />}
                 {subTab === 'officers' && <ProbationOfficerDatabase />}
                 {subTab === 'stats_adv' && <AdvancedStats />}

@@ -20,17 +20,23 @@ export const PSYCHOLOGIST_COLORS = [
     'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200'
 ];
 
-export const getPsychologistColor = (psychologistId) => {
+export const getPsychologistColor = (psychologistId, psychologistList = []) => {
     if (!psychologistId) return 'bg-gray-100 text-gray-800 border-gray-200';
 
-    let hash = 0;
-    for (let i = 0; i < psychologistId.length; i++) {
-        hash = psychologistId.charCodeAt(i) + ((hash << 5) - hash);
+    // Assign colors by each psychologist's fixed position in the full roster
+    // (ordered by name) so that, as long as there are no more psychologists
+    // than colors, every psychologist gets a distinct, stable color.
+    const index = psychologistList.findIndex(p => p.id === psychologistId);
+    if (index === -1) {
+        let hash = 0;
+        for (let i = 0; i < psychologistId.length; i++) {
+            hash = psychologistId.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return PSYCHOLOGIST_COLORS[Math.abs(hash) % PSYCHOLOGIST_COLORS.length];
     }
 
-    const index = Math.abs(hash) % PSYCHOLOGIST_COLORS.length;
-    return PSYCHOLOGIST_COLORS[index];
-};;
+    return PSYCHOLOGIST_COLORS[index % PSYCHOLOGIST_COLORS.length];
+};
 
 export const toROCDate = (dateOrString) => {
     if (!dateOrString) return '';

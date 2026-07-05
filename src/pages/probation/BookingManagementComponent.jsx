@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import Button from '../../components/Button';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, FileText, CheckCircle, XCircle, AlertCircle, Search, Filter, Plus, Edit, Trash2, Eye, Minus, List as ListIcon, Download, X } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, Users, FileText, CheckCircle, XCircle, AlertCircle, Search, Filter, Plus, Edit, Trash2, Eye, Minus, List as ListIcon, Download, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { convertDateStringToROC, toROCFullDate, getCurrentROCYear, getTimeOptions, getPsychologistColor } from '../../utils/dateUtils';
 
@@ -17,6 +17,7 @@ const BookingManagement = ({
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [juvenileInfoMap, setJuvenileInfoMap] = useState({}); // Map juvenile_id -> { department, officerName, psychologistName }
+    const [guardianInfoMap, setGuardianInfoMap] = useState({}); // Map guardian_id -> { department, officerName, psychologistName }
 
 
     // Contact Modal State
@@ -50,6 +51,9 @@ const BookingManagement = ({
     // Form Data
     const [formData, setFormData] = useState({
         juvenile_id: '',
+        guardian_id: '',
+        case_type: 'juvenile', // 'juvenile' or 'guardian'
+        juvenile_name: '', // Only used when case_type === 'guardian'
         psychologist_id: '',
         status: '尚未開始',
         counseling_type: 'Individual',
@@ -68,6 +72,7 @@ const BookingManagement = ({
 
     // Dropdown/Reference Data
     const [juveniles, setJuveniles] = useState([]);
+    const [guardianCases, setGuardianCases] = useState([]);
     const [psychologists, setPsychologists] = useState([]);
     const [uniqueDepartments, setUniqueDepartments] = useState([]);
 
@@ -80,6 +85,19 @@ const BookingManagement = ({
 
     const rooms = ['201', '202', '203', '204', '205', '206', '207', '208'];
     const statuses = ['尚未開始', '缺席', '等待報告', '完成', '確認缺席'];
+
+    // Resolve the linked case for a booking, regardless of whether it's a juvenile or a guardian
+    const getCaseDisplay = (b) => {
+        const isGuardian = !!b.guardian_id;
+        const caseRecord = isGuardian ? b.guardians : b.juveniles;
+        return {
+            isGuardian,
+            name: caseRecord?.name || '-',
+            case_number: caseRecord?.case_number || '',
+            officer: caseRecord?.probation_officers || null,
+            department: caseRecord?.probation_officers?.department || ''
+        };
+    };
 
     useEffect(() => {
         fetchBookings();
@@ -111,6 +129,20 @@ const BookingManagement = ({
             department,
             contact_info,
             extension_number
+        )
+    ),
+    guardians(
+        id,
+        name,
+        case_number,
+        probation_officers(
+            name,
+            department,
+            contact_info,
+            extension_number
+        ),
+        psychologists(
+            name
         )
     ),
     psychologists(
@@ -174,6 +206,38 @@ const BookingManagement = ({
                 if (po?.department) depts.add(po.department);
             });
             setJuvenileInfoMap(infoMap);
+
+            // 4. Fetch Guardians (親職教育資料庫 cases), same shape as Juveniles
+            const { data: guardianData } = await supabase
+                .from('guardians')
+                .select(`
+                    id, name,
+                    juvenile_name,
+                    probation_officer_id,
+                    probation_officers (
+                        name,
+                        department
+                    ),
+                    psychologists(id, name)
+                `)
+                .eq('status', '服務中')
+                .order('name');
+            setGuardianCases(guardianData || []);
+
+            const guardianMap = {};
+            guardianData?.forEach(g => {
+                const po = g.probation_officers;
+                const psy = g.psychologists;
+
+                guardianMap[g.id] = {
+                    department: po?.department || '',
+                    officerName: po?.name || '',
+                    psychologistName: psy?.name || ''
+                };
+
+                if (po?.department) depts.add(po.department);
+            });
+            setGuardianInfoMap(guardianMap);
             setUniqueDepartments(Array.from(depts).sort());
 
             // Fetch Psychologists
@@ -196,6 +260,9 @@ const BookingManagement = ({
         setEditingId(null);
         setFormData({
             juvenile_id: '',
+            guardian_id: '',
+            case_type: 'juvenile',
+            juvenile_name: '',
             psychologist_id: fixedPsychologistId || '', // Auto-set if fixed
             status: '尚未開始',
             counseling_type: 'Individual',
@@ -219,8 +286,13 @@ const BookingManagement = ({
         setIsEditing(true);
         setEditingId(booking.id);
 
+        const isGuardianBooking = !!booking.guardian_id;
+
         setFormData({
-            juvenile_id: booking.juvenile_id,
+            juvenile_id: booking.juvenile_id || '',
+            guardian_id: booking.guardian_id || '',
+            case_type: isGuardianBooking ? 'guardian' : 'juvenile',
+            juvenile_name: booking.juvenile_name || '',
             psychologist_id: booking.psychologist_id,
             status: booking.status || '尚未開始',
             counseling_type: booking.counseling_type,
@@ -237,7 +309,13 @@ const BookingManagement = ({
             is_verified: booking.is_verified || false
         });
 
-        if (booking.juveniles) {
+        if (isGuardianBooking && booking.guardians) {
+            setSelectedJuvenileInfo({
+                department: booking.guardians.probation_officers?.department || '-',
+                officer: booking.guardians.probation_officers?.name || '-',
+                psychologistName: booking.guardians.psychologists?.name || '-'
+            });
+        } else if (booking.juveniles) {
             setSelectedJuvenileInfo({
                 department: booking.juveniles.probation_officers?.department || '-',
                 officer: booking.juveniles.probation_officers?.name || '-',
@@ -247,11 +325,16 @@ const BookingManagement = ({
         setShowModal(true);
     };
 
-    const handleJuvenileChange = (juvId) => {
-        setFormData({ ...formData, juvenile_id: juvId });
+    const handleCaseChange = (caseId) => {
+        if (!caseId) {
+            setFormData(prev => ({ ...prev, juvenile_id: '', guardian_id: '', case_type: 'juvenile', juvenile_name: '' }));
+            setSelectedJuvenileInfo({ department: '', officer: '', psychologistName: '' });
+            return;
+        }
 
-        const selectedJuv = juveniles.find(j => j.id === juvId);
+        const selectedJuv = juveniles.find(j => j.id === caseId);
         if (selectedJuv) {
+            setFormData(prev => ({ ...prev, case_type: 'juvenile', juvenile_id: caseId, guardian_id: '', juvenile_name: '' }));
             setSelectedJuvenileInfo({
                 department: selectedJuv.probation_officers?.department || '-',
                 officer: selectedJuv.probation_officers?.name || '-',
@@ -260,8 +343,20 @@ const BookingManagement = ({
             if (selectedJuv.psychologists?.id) {
                 setFormData(prev => ({ ...prev, psychologist_id: selectedJuv.psychologists.id }));
             }
-        } else {
-            setSelectedJuvenileInfo({ department: '', officer: '', psychologistName: '' });
+            return;
+        }
+
+        const selectedGuardian = guardianCases.find(g => g.id === caseId);
+        if (selectedGuardian) {
+            setFormData(prev => ({ ...prev, case_type: 'guardian', guardian_id: caseId, juvenile_id: '', juvenile_name: selectedGuardian.juvenile_name || '' }));
+            setSelectedJuvenileInfo({
+                department: selectedGuardian.probation_officers?.department || '-',
+                officer: selectedGuardian.probation_officers?.name || '-',
+                psychologistName: selectedGuardian.psychologists?.name || '-'
+            });
+            if (selectedGuardian.psychologists?.id) {
+                setFormData(prev => ({ ...prev, psychologist_id: selectedGuardian.psychologists.id }));
+            }
         }
     };
 
@@ -270,7 +365,9 @@ const BookingManagement = ({
         try {
             let error;
             const payload = {
-                juvenile_id: formData.juvenile_id,
+                juvenile_id: formData.case_type === 'juvenile' ? (formData.juvenile_id || null) : null,
+                guardian_id: formData.case_type === 'guardian' ? (formData.guardian_id || null) : null,
+                juvenile_name: formData.case_type === 'guardian' ? (formData.juvenile_name || null) : null,
                 psychologist_id: formData.psychologist_id,
                 status: formData.status,
                 counseling_type: formData.counseling_type,
@@ -317,19 +414,22 @@ const BookingManagement = ({
     const handleExport = () => {
         try {
             // Prepare data for export
-            const exportData = filteredBookings.map(b => ({
-                '日期': convertDateStringToROC(b.booking_date),
-                '時間': `${b.start_time?.slice(0, 5)} - ${b.end_time?.slice(0, 5)} `,
-                '狀態': b.status,
-                '少年姓名': b.juveniles?.name || '',
-                '案號': b.juveniles?.case_number || '',
-                '股別': b.juveniles?.probation_officers?.department || '',
-                '保護官': b.juveniles?.probation_officers?.name || '',
-                '心理師': b.psychologists?.name || '',
-                '諮商類別': b.counseling_type === 'Joint' ? `聯合(${b.joint_attendees_count}人)` : '個別',
-                '談話室': b.room_number || '',
-                '備註': b.notes || ''
-            }));
+            const exportData = filteredBookings.map(b => {
+                const caseDisplay = getCaseDisplay(b);
+                return {
+                    '日期': convertDateStringToROC(b.booking_date),
+                    '時間': `${b.start_time?.slice(0, 5)} - ${b.end_time?.slice(0, 5)} `,
+                    '狀態': b.status,
+                    '個案姓名': caseDisplay.name,
+                    '案號': caseDisplay.case_number,
+                    '股別': caseDisplay.department,
+                    '保護官': caseDisplay.officer?.name || '',
+                    '心理師': b.psychologists?.name || '',
+                    '諮商類別': b.counseling_type === 'Joint' ? `聯合(${b.joint_attendees_count}人)` : '個別',
+                    '談話室': b.room_number || '',
+                    '備註': b.notes || ''
+                };
+            });
 
             // Create worksheet
             const ws = XLSX.utils.json_to_sheet(exportData);
@@ -370,8 +470,9 @@ const BookingManagement = ({
         // Search Query (Wildcard search)
         if (filters.searchQuery) {
             const query = filters.searchQuery.toLowerCase();
-            const name = b.juveniles?.name?.toLowerCase() || '';
-            const caseNum = b.juveniles?.case_number?.toLowerCase() || '';
+            const caseDisplay = getCaseDisplay(b);
+            const name = caseDisplay.name?.toLowerCase() || '';
+            const caseNum = caseDisplay.case_number?.toLowerCase() || '';
             const notes = b.notes?.toLowerCase() || '';
             const details = b.joint_details?.toLowerCase() || '';
 
@@ -388,10 +489,10 @@ const BookingManagement = ({
         // Department (Deep check)
         // Department (Deep check using Map for reliability)
         if (fixedDepartment) {
-            const rowDept = b.juveniles?.probation_officers?.department || juvenileInfoMap[b.juvenile_id]?.department;
+            const rowDept = getCaseDisplay(b).department || (b.guardian_id ? guardianInfoMap[b.guardian_id]?.department : juvenileInfoMap[b.juvenile_id]?.department);
             if (rowDept !== fixedDepartment) return false;
         } else if (filters.department) {
-            const rowDept = b.juveniles?.probation_officers?.department || juvenileInfoMap[b.juvenile_id]?.department;
+            const rowDept = getCaseDisplay(b).department || (b.guardian_id ? guardianInfoMap[b.guardian_id]?.department : juvenileInfoMap[b.juvenile_id]?.department);
             if (rowDept !== filters.department) return false;
         }
         // Psychologist (Deep check)
@@ -470,6 +571,7 @@ const BookingManagement = ({
             default: return 'bg-gray-100 text-gray-700 border-gray-200'; // 尚未開始
         }
     };
+
 
     const getCounselingTypeDisplay = (b) => {
         if (b.counseling_type === 'Joint') {
@@ -652,7 +754,7 @@ const BookingManagement = ({
                                         <th className="py-3 px-4">狀態</th>
                                         {showReimbursement && <th className="py-3 px-4">核銷</th>}
                                         <th className="py-3 px-4">日期時間</th>
-                                        <th className="py-3 px-4">少年姓名</th>
+                                        <th className="py-3 px-4">個案姓名</th>
                                         <th className="py-3 px-4">股別</th>
                                         {!fixedPsychologistId && <th className="py-3 px-4">心理師</th>}
                                         <th className="py-3 px-4">諮商類別</th>
@@ -739,7 +841,12 @@ const BookingManagement = ({
                                                         <span className="text-gray-500">{b.start_time?.slice(0, 5)} - {b.end_time?.slice(0, 5)}</span>
                                                     </div>
                                                 </td>
-                                                <td className="py-3 px-4 font-medium">{b.juveniles?.name || '-'}</td>
+                                                <td className="py-3 px-4 font-medium">
+                                                    <span className="inline-flex items-center gap-1">
+                                                        {getCaseDisplay(b).name}
+                                                        {b.guardian_id && <Users className="w-3.5 h-3.5 text-purple-500 cursor-help" title="強制親職教育" />}
+                                                    </span>
+                                                </td>
 
                                                 {/* Department / Officer Cell */}
                                                 <td className="py-3 px-4">
@@ -748,7 +855,7 @@ const BookingManagement = ({
                                                             className="text-left hover:text-primary hover:underline decoration-dashed underline-offset-4 transition-all"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                const officer = b.juveniles?.probation_officers;
+                                                                const officer = getCaseDisplay(b).officer;
                                                                 if (officer) {
                                                                     handleOpenContact('保護官資訊', [
                                                                         { label: '姓名', value: officer.name },
@@ -759,10 +866,10 @@ const BookingManagement = ({
                                                                 }
                                                             }}
                                                         >
-                                                            {b.juveniles?.probation_officers?.department || '-'}
+                                                            {getCaseDisplay(b).department || '-'}
                                                         </button>
                                                     ) : (
-                                                        <span>{b.juveniles?.probation_officers?.department || '-'}</span>
+                                                        <span>{getCaseDisplay(b).department || '-'}</span>
                                                     )}
                                                 </td>
 
@@ -886,9 +993,12 @@ const BookingManagement = ({
                                         <div key={b.id} onClick={(e) => { e.stopPropagation(); handleOpenEdit(b); }} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm active:scale-[0.98] transition-transform">
                                             <div className="flex justify-between items-start mb-3 border-b border-gray-50 pb-2">
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-gray-800 text-lg">{b.juveniles?.name || '-'}</span>
+                                                    <span className="font-bold text-gray-800 text-lg flex items-center gap-1">
+                                                        {getCaseDisplay(b).name}
+                                                        {b.guardian_id && <Users className="w-4 h-4 text-purple-500" title="強制親職教育" />}
+                                                    </span>
                                                     <span className="text-xs text-gray-400">
-                                                        {b.juveniles?.probation_officers?.department || '-'} / {b.juveniles?.probation_officers?.name || '-'}
+                                                        {getCaseDisplay(b).department || '-'} / {getCaseDisplay(b).officer?.name || '-'}
                                                     </span>
                                                 </div>
                                                 <div className="flex flex-col items-end gap-1">
@@ -1090,18 +1200,19 @@ const BookingManagement = ({
                                                 </div>
                                                 <div className="space-y-1">
                                                     {dayBookings.map(b => {
-                                                        const colorClass = getPsychologistColor(b.psychologist_id);
+                                                        const colorClass = getPsychologistColor(b.psychologist_id, psychologists);
 
                                                         // Status Indicator logic
                                                         const isAbsent = ['缺席', '確認缺席'].includes(b.status);
                                                         const isCompleted = b.status === '完成';
+                                                        const caseDisplay = getCaseDisplay(b);
 
                                                         return (
                                                             <div
                                                                 key={b.id}
                                                                 onClick={(e) => { e.stopPropagation(); handleOpenEdit(b); }}
                                                                 className={`text-xs p-1 rounded border truncate cursor-pointer ${colorClass} ${isAbsent ? 'opacity-60 line-through' : ''} ${isCompleted ? 'ring-1 ring-green-500' : ''} `}
-                                                                title={`${b.start_time?.slice(0, 5)} ${b.juveniles?.name} (${fixedPsychologistId ? (b.juveniles?.probation_officers?.department || '-') : (b.psychologists?.name || '-')}) - ${b.status} `}
+                                                                title={`${b.start_time?.slice(0, 5)} ${caseDisplay.name} (${fixedPsychologistId ? (caseDisplay.department || '-') : (b.psychologists?.name || '-')}) - ${b.status}${caseDisplay.isGuardian ? ' - 強制親職教育' : ''} `}
                                                             >
                                                                 <div className="flex justify-between items-center">
                                                                     <span className="font-bold">{b.start_time?.slice(0, 5)}</span>
@@ -1109,10 +1220,11 @@ const BookingManagement = ({
                                                                     {isCompleted && <CheckCircle className="w-3 h-3 text-green-600" />}
                                                                     {isAbsent && <XCircle className="w-3 h-3 text-red-600" />}
                                                                 </div>
-                                                                <div className="truncate">
-                                                                    {b.juveniles?.name}
+                                                                <div className="truncate flex items-center gap-1">
+                                                                    {caseDisplay.name}
+                                                                    {caseDisplay.isGuardian && <Users className="w-3 h-3 flex-shrink-0" title="強制親職教育" />}
                                                                     <span className="text-[10px] opacity-75 ml-1">
-                                                                        ({fixedPsychologistId ? (b.juveniles?.probation_officers?.department || '-') : (b.psychologists?.name || '-')})
+                                                                        ({fixedPsychologistId ? (caseDisplay.department || '-') : (b.psychologists?.name || '-')})
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -1208,23 +1320,34 @@ const BookingManagement = ({
                                             )}
                                         </div>
                                     </div>
-                                    {/* Juvenile & Psych Row (Moved to top on mobile) */}
+                                    {/* Case & Psych Row (Moved to top on mobile) */}
                                     <div className="order-1 sm:order-none grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div><label className="block text-sm font-medium mb-1">選擇少年</label>
-                                            <select required className="w-full p-3 sm:p-2 border rounded min-h-[44px] sm:min-h-0 text-base sm:text-sm" value={formData.juvenile_id} onChange={e => handleJuvenileChange(e.target.value)}>
+                                        <div><label className="block text-sm font-medium mb-1">選擇個案</label>
+                                            <select required className="w-full p-3 sm:p-2 border rounded min-h-[44px] sm:min-h-0 text-base sm:text-sm" value={formData.case_type === 'guardian' ? formData.guardian_id : formData.juvenile_id} onChange={e => handleCaseChange(e.target.value)}>
                                                 <option value="">請選擇</option>
-                                                {juveniles
-                                                    .filter(j => {
-                                                        // 1. If fixedPsychologistId is present (Psychologist View), only show their juveniles
-                                                        if (fixedPsychologistId && j.psychologists?.id !== fixedPsychologistId) return false;
+                                                <optgroup label="少年">
+                                                    {juveniles
+                                                        .filter(j => {
+                                                            // 1. If fixedPsychologistId is present (Psychologist View), only show their juveniles
+                                                            if (fixedPsychologistId && j.psychologists?.id !== fixedPsychologistId) return false;
 
-                                                        // 2. If Admin selected a psychologist in the form, only show that psychologist's juveniles
-                                                        // Note: We check if formData.psychologist_id is present AND not empty
-                                                        if (formData.psychologist_id && j.psychologists?.id !== formData.psychologist_id) return false;
+                                                            // 2. If Admin selected a psychologist in the form, only show that psychologist's juveniles
+                                                            // Note: We check if formData.psychologist_id is present AND not empty
+                                                            if (formData.psychologist_id && j.psychologists?.id !== formData.psychologist_id) return false;
 
-                                                        return true;
-                                                    })
-                                                    .map(j => <option key={j.id} value={j.id}>{j.name} ({j.probation_officers?.department || '未分股'})</option>)}
+                                                            return true;
+                                                        })
+                                                        .map(j => <option key={j.id} value={j.id}>{j.name} ({j.probation_officers?.department || '未分股'})</option>)}
+                                                </optgroup>
+                                                <optgroup label="家長 (強制親職教育)">
+                                                    {guardianCases
+                                                        .filter(g => {
+                                                            if (fixedPsychologistId && g.psychologists?.id !== fixedPsychologistId) return false;
+                                                            if (formData.psychologist_id && g.psychologists?.id !== formData.psychologist_id) return false;
+                                                            return true;
+                                                        })
+                                                        .map(g => <option key={g.id} value={g.id}>{g.name} ({g.probation_officers?.department || '未分股'})</option>)}
+                                                </optgroup>
                                             </select></div>
                                         <div><label className="block text-sm font-medium mb-1">心理師</label>
                                             <select
@@ -1240,10 +1363,13 @@ const BookingManagement = ({
                                     </div>
 
                                     {/* Auto-fill info */}
-                                    <div className="order-3 sm:order-none bg-gray-50 border p-3 sm:p-2 rounded grid grid-cols-3 gap-2 text-xs">
+                                    <div className={`order-3 sm:order-none bg-gray-50 border p-3 sm:p-2 rounded grid ${formData.case_type === 'guardian' ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'} gap-2 text-xs`}>
                                         <div><span className="text-gray-400">股別</span><div className="mt-1 font-medium text-sm sm:text-xs">{selectedJuvenileInfo.department}</div></div>
                                         <div><span className="text-gray-400">保護官</span><div className="mt-1 font-medium text-sm sm:text-xs">{selectedJuvenileInfo.officer}</div></div>
                                         <div><span className="text-gray-400">預設心理師</span><div className="mt-1 font-medium text-sm sm:text-xs">{selectedJuvenileInfo.psychologistName}</div></div>
+                                        {formData.case_type === 'guardian' && (
+                                            <div><span className="text-gray-400">少年姓名</span><div className="mt-1 font-medium text-sm sm:text-xs">{formData.juvenile_name || '-'}</div></div>
+                                        )}
                                     </div>
 
                                     {/* Counseling Type */}

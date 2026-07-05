@@ -16,7 +16,9 @@ const JuvenileDatabase = () => {
     const [formData, setFormData] = useState({
         name: '',
         case_number: '',
+        case_type: '保護管束', // Default case type
         status: '服務中', // Default status
+        closure_reason: '',
         selected_department: '', // UI State for Dropdown
         probation_officer_id: '', // Actual Foreign Key
         psychologist_id: ''
@@ -93,7 +95,9 @@ const JuvenileDatabase = () => {
         setFormData({
             name: '',
             case_number: '',
+            case_type: '保護管束',
             status: '服務中',
+            closure_reason: '',
             selected_department: '',
             probation_officer_id: '',
             psychologist_id: ''
@@ -111,7 +115,9 @@ const JuvenileDatabase = () => {
         setFormData({
             name: juvenile.name,
             case_number: juvenile.case_number,
+            case_type: juvenile.case_type || '保護管束',
             status: juvenile.status || '服務中',
+            closure_reason: juvenile.closure_reason || '',
             selected_department: existDept,
             probation_officer_id: juvenile.probation_officer_id || '',
             psychologist_id: juvenile.psychologist_id || ''
@@ -136,7 +142,9 @@ const JuvenileDatabase = () => {
             const payload = {
                 name: formData.name,
                 case_number: formData.case_number,
+                case_type: formData.case_type,
                 status: formData.status,
+                closure_reason: formData.status === '已結案' ? (formData.closure_reason || null) : null,
                 probation_officer_id: formData.probation_officer_id || null,
                 psychologist_id: formData.psychologist_id || null
             };
@@ -387,6 +395,23 @@ const JuvenileDatabase = () => {
                                         <option value="服務中">服務中</option>
                                         <option value="已結案">已結案</option>
                                     </select>
+                                    {formData.status === '已結案' && (
+                                        <div className="mt-2">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">結案原因</label>
+                                            <select
+                                                required
+                                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
+                                                value={formData.closure_reason}
+                                                onChange={e => setFormData({ ...formData, closure_reason: e.target.value })}
+                                            >
+                                                <option value="">請選擇</option>
+                                                <option value="期滿">期滿</option>
+                                                <option value="處分轉換">處分轉換</option>
+                                                <option value="已無需求">已無需求</option>
+                                                <option value="更換心理師">更換心理師</option>
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -400,6 +425,19 @@ const JuvenileDatabase = () => {
                                     onChange={e => setFormData({ ...formData, case_number: e.target.value })}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">統一案號書寫方式，例如：115年度觀少護字第118號改為「115,觀少護,118」</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">案件類型</label>
+                                <select
+                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
+                                    value={formData.case_type}
+                                    onChange={e => setFormData({ ...formData, case_type: e.target.value })}
+                                >
+                                    <option value="調查">調查</option>
+                                    <option value="保護管束">保護管束</option>
+                                    <option value="假日生活輔導">假日生活輔導</option>
+                                </select>
                             </div>
 
                             <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 space-y-3">
