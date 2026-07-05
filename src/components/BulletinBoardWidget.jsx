@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
-import { Megaphone, ChevronDown, ChevronUp, Bell } from 'lucide-react';
+import { Megaphone, ChevronDown, ChevronUp, Bell, Users } from 'lucide-react';
 import { toROCDate } from '../utils/dateUtils';
 
-const BulletinBoardWidget = () => {
-    const [bulletins, setBulletins] = useState([]);
+const BulletinBoardWidget = ({
+    viewerRole = null, // 'admin' | 'manager' | 'general' | 'psychologist'
+    department = null, // Viewer's own department, for officer/manager audience matching
+    psychologistId = null // Viewer's own psychologist id, for psychologist audience matching
+}) => {
+    const [allBulletins, setAllBulletins] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(true);
 
@@ -21,12 +25,41 @@ const BulletinBoardWidget = () => {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            setBulletins(data || []);
+            setAllBulletins(data || []);
         } catch (error) {
             console.error('Error fetching bulletins:', error);
         } finally {
             setLoading(false);
         }
+    };
+
+    // Admins manage bulletins directly, so they always see everything that's on-shelf
+    const isWithinPublishPeriod = (b) => {
+        const today = new Date().toISOString().split('T')[0];
+        if (b.start_date && today < b.start_date) return false;
+        if (b.end_date && today > b.end_date) return false;
+        return true;
+    };
+
+    const matchesAudience = (b) => {
+        if (viewerRole === 'admin') return true;
+        if (viewerRole === 'psychologist') {
+            return !!b.target_all_psychologists || !!b.target_psychologist_ids?.includes(psychologistId);
+        }
+        // 'manager' / 'general' (probation officers)
+        return !!b.target_all_officers || !!(department && b.target_departments?.includes(department));
+    };
+
+    const bulletins = allBulletins.filter(b => isWithinPublishPeriod(b) && matchesAudience(b));
+
+    // Only shown to the System Admin, so they can see who each bulletin is targeted at
+    const getAudienceSummary = (b) => {
+        const parts = [];
+        if (b.target_all_psychologists) parts.push('心理師 (全部)');
+        if (b.target_all_officers) parts.push('保護官 (全部)');
+        if (b.target_psychologist_ids?.length > 0) parts.push(`個別心理師 (${b.target_psychologist_ids.length})`);
+        if (b.target_departments?.length > 0) parts.push(`個別股別 (${b.target_departments.length})`);
+        return parts.length > 0 ? parts.join('、') : '未設定';
     };
 
     return (
@@ -74,6 +107,12 @@ const BulletinBoardWidget = () => {
                                     <p className="text-gray-600 text-sm whitespace-pre-wrap leading-relaxed">
                                         {b.content}
                                     </p>
+                                    {viewerRole === 'admin' && (
+                                        <div className="mt-2 pt-2 border-t border-gray-50 flex items-center gap-1.5 text-xs text-gray-400">
+                                            <Users className="w-3.5 h-3.5 flex-shrink-0" />
+                                            投放對象：{getAudienceSummary(b)}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

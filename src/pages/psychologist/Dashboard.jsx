@@ -32,7 +32,7 @@ const Dashboard = () => {
             </div>
 
             {/* Public Bulletin Board */}
-            <BulletinBoardWidget />
+            <BulletinBoardWidget viewerRole="psychologist" psychologistId={psychologistId} />
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[500px]">
                 {psychologistId ? (

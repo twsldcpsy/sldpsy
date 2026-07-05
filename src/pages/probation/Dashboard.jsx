@@ -159,7 +159,7 @@ const Dashboard = () => {
             </div>
 
             {/* Public Bulletin Board */}
-            <BulletinBoardWidget />
+            <BulletinBoardWidget viewerRole={role} department={departmentName} />
 
             {/* Tabs */}
             <div className="flex border-b border-gray-200 overflow-x-auto">
