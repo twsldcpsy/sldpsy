@@ -152,6 +152,8 @@ const ManagerStats = () => {
 
         // 1. Filter Data
         const filtered = bookings.filter(b => {
+            // '諮商提醒' bookings are never counted in statistics
+            if (b.status === '諮商提醒') return false;
             const d = new Date(b.booking_date);
             // Year Filter (Compare ROC Year)
             if (year.length > 0 && !year.includes(d.getFullYear() - 1911)) return false;

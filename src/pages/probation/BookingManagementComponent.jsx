@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import Button from '../../components/Button';
 import MultiSelectFilter from '../../components/MultiSelectFilter';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, Users, FileText, CheckCircle, XCircle, AlertCircle, Search, Filter, Plus, Edit, Trash2, Eye, Minus, List as ListIcon, Download, X } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, Users, FileText, CheckCircle, XCircle, AlertCircle, Search, Filter, Plus, Edit, Trash2, Eye, Minus, List as ListIcon, Download, X, Bell } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { convertDateStringToROC, toROCFullDate, getCurrentROCYear, getTimeOptions, getPsychologistColor } from '../../utils/dateUtils';
 
@@ -14,6 +14,9 @@ const BookingManagement = ({
     allowExport = false, // Default to false, explicitly enable for Admin
     showReimbursement = false // Default to false, only enable for Admin
 }) => {
+    // Only the unrestricted System Admin view (Maintenance > 預約管理) shows '諮商提醒' bookings
+    const isAdminFullView = !readOnly && !fixedDepartment && !fixedPsychologistId;
+
     // Canvas & Data State
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -85,7 +88,9 @@ const BookingManagement = ({
     });
 
     const rooms = ['201', '202', '203', '204', '205', '206', '207', '208'];
-    const statuses = ['尚未開始', '缺席', '等待報告', '完成', '確認缺席'];
+    const statuses = ['尚未開始', '缺席', '等待報告', '完成', '確認缺席', '諮商提醒'];
+    // '諮商提醒' is an admin-only status: not offered as a selectable option outside the full admin view
+    const visibleStatuses = isAdminFullView ? statuses : statuses.filter(s => s !== '諮商提醒');
 
     // Resolve the linked case for a booking, regardless of whether it's a juvenile or a guardian
     const getCaseDisplay = (b) => {
@@ -414,8 +419,8 @@ const BookingManagement = ({
 
     const handleExport = () => {
         try {
-            // Prepare data for export
-            const exportData = filteredBookings.map(b => {
+            // Prepare data for export ('諮商提醒' bookings are never exportable)
+            const exportData = filteredBookings.filter(b => b.status !== '諮商提醒').map(b => {
                 const caseDisplay = getCaseDisplay(b);
                 return {
                     '日期': convertDateStringToROC(b.booking_date),
@@ -468,6 +473,8 @@ const BookingManagement = ({
     // --- Filter Logic ---
 
     const filteredBookings = bookings.filter(b => {
+        // '諮商提醒' is only ever visible in the full System Admin view
+        if (b.status === '諮商提醒' && !isAdminFullView) return false;
         // Search Query (Wildcard search)
         if (filters.searchQuery) {
             const query = filters.searchQuery.toLowerCase();
@@ -676,7 +683,7 @@ const BookingManagement = ({
                         {visibleFilters.includes('status') && (
                             <MultiSelectFilter
                                 label="所有狀態"
-                                options={statuses.map(s => ({ value: s, label: s }))}
+                                options={visibleStatuses.map(s => ({ value: s, label: s }))}
                                 selected={filters.status}
                                 onChange={vals => setFilters({ ...filters, status: vals })}
                             />
@@ -785,7 +792,7 @@ const BookingManagement = ({
                                                             onChange={(e) => handleQuickUpdate(b.id, 'status', e.target.value)}
                                                             onClick={(e) => e.stopPropagation()}
                                                         >
-                                                            {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                                                            {visibleStatuses.map(s => <option key={s} value={s}>{s}</option>)}
                                                         </select>
                                                     )}
                                                 </td>
@@ -840,6 +847,7 @@ const BookingManagement = ({
                                                     <span className="inline-flex items-center gap-1">
                                                         {getCaseDisplay(b).name}
                                                         {b.guardian_id && <Users className="w-3.5 h-3.5 text-purple-500 cursor-help" title="強制親職教育" />}
+                                                        {b.status === '諮商提醒' && <Bell className="w-3.5 h-3.5 text-amber-600 cursor-help" title="諮商提醒" />}
                                                     </span>
                                                 </td>
 
@@ -991,6 +999,7 @@ const BookingManagement = ({
                                                     <span className="font-bold text-gray-800 text-lg flex items-center gap-1">
                                                         {getCaseDisplay(b).name}
                                                         {b.guardian_id && <Users className="w-4 h-4 text-purple-500" title="強制親職教育" />}
+                                                        {b.status === '諮商提醒' && <Bell className="w-4 h-4 text-amber-600" title="諮商提醒" />}
                                                     </span>
                                                     <span className="text-xs text-gray-400">
                                                         {getCaseDisplay(b).department || '-'} / {getCaseDisplay(b).officer?.name || '-'}
@@ -1195,7 +1204,10 @@ const BookingManagement = ({
                                                 </div>
                                                 <div className="space-y-1">
                                                     {dayBookings.map(b => {
-                                                        const colorClass = getPsychologistColor(b.psychologist_id, psychologists);
+                                                        // '諮商提醒' always gets one fixed color, distinct from the psychologist color palette
+                                                        const colorClass = b.status === '諮商提醒'
+                                                            ? 'bg-yellow-200 text-yellow-900 border-yellow-500'
+                                                            : getPsychologistColor(b.psychologist_id, psychologists);
 
                                                         // Status Indicator logic
                                                         const isAbsent = ['缺席', '確認缺席'].includes(b.status);
@@ -1296,7 +1308,7 @@ const BookingManagement = ({
                                                 onChange={e => setFormData({ ...formData, status: e.target.value })}
                                                 disabled={!!fixedPsychologistId}
                                             >
-                                                {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                                                {visibleStatuses.map(s => <option key={s} value={s}>{s}</option>)}
                                             </select>
                                             {/* Verification Checkbox-Only Show if Status is Completed */}
                                             {formData.status === '完成' && (
