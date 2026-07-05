@@ -157,7 +157,7 @@ const NewBooking = () => {
                 </Button>
             </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-white p-5 sm:p-8 rounded-xl shadow-sm border border-gray-100">
                 <form onSubmit={handleSubmit} className="space-y-8">
                     {/* Section 1: Juvenile Info */}
                     <section className="space-y-4">
@@ -168,7 +168,7 @@ const NewBooking = () => {
                                 <div className="relative">
                                     <select
                                         required
-                                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all bg-white"
+                                        className="w-full px-4 py-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all bg-white"
                                         value={formData.juvenile_id}
                                         onChange={handleJuvenileChange}
                                     >
@@ -184,7 +184,7 @@ const NewBooking = () => {
                                 <input
                                     type="text"
                                     readOnly
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-500"
+                                    className="w-full px-4 py-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-500"
                                     value={selectedJuvenileInfo.gender}
                                 />
                             </div>
@@ -193,7 +193,7 @@ const NewBooking = () => {
                                 <input
                                     type="text"
                                     readOnly
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-500"
+                                    className="w-full px-4 py-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-500"
                                     value={selectedJuvenileInfo.caseType}
                                 />
                             </div>
@@ -202,7 +202,7 @@ const NewBooking = () => {
                                 <input
                                     type="text"
                                     readOnly
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-500"
+                                    className="w-full px-4 py-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-500"
                                     value={selectedJuvenileInfo.department}
                                 />
                             </div>
@@ -238,7 +238,7 @@ const NewBooking = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">諮商對象</label>
                                     <select
-                                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
+                                        className="w-full px-4 py-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
                                         value={formData.individual_subject}
                                         onChange={(e) => setFormData(p => ({ ...p, individual_subject: e.target.value }))}
                                     >
@@ -255,14 +255,14 @@ const NewBooking = () => {
                                         <input
                                             type="number"
                                             min="2"
-                                            className="w-20 px-4 py-2.5 rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
+                                            className="w-20 px-4 py-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
                                             value={formData.joint_attendees_count}
                                             onChange={(e) => setFormData(p => ({ ...p, joint_attendees_count: e.target.value }))}
                                         />
                                         <input
                                             type="text"
                                             placeholder="請註明參與者 (如: 父母、兄弟姊妹)"
-                                            className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
+                                            className="flex-1 px-4 py-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
                                             value={formData.joint_details}
                                             onChange={(e) => setFormData(p => ({ ...p, joint_details: e.target.value }))}
                                         />
@@ -282,11 +282,11 @@ const NewBooking = () => {
                                     <input
                                         type="date"
                                         required
-                                        className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
+                                        className="flex-1 px-4 py-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
                                         value={formData.booking_date}
                                         onChange={(e) => setFormData(p => ({ ...p, booking_date: e.target.value }))}
                                     />
-                                    <div className="flex gap-1 w-48">
+                                    <div className="flex gap-1 w-full sm:w-48">
                                         <select
                                             required
                                             className="flex-1 px-2 py-2.5 rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
@@ -322,7 +322,7 @@ const NewBooking = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">地點</label>
                                 <select
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
+                                    className="w-full px-4 py-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
                                     value={formData.location}
                                     onChange={(e) => setFormData(p => ({ ...p, location: e.target.value }))}
                                 >
@@ -336,7 +336,7 @@ const NewBooking = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">時數 (分鐘)</label>
                                 <select
-                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
+                                    className="w-full px-4 py-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
                                     value={formData.duration}
                                     onChange={(e) => setFormData(p => ({ ...p, duration: e.target.value }))}
                                 >
@@ -352,7 +352,7 @@ const NewBooking = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-2">備註</label>
                             <textarea
                                 rows="3"
-                                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
+                                className="w-full px-4 py-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm rounded-lg border border-gray-300 focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none"
                                 placeholder="其他需要注意的事項..."
                                 value={formData.notes}
                                 onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))}
@@ -360,9 +360,9 @@ const NewBooking = () => {
                         </div>
                     </section>
 
-                    <div className="pt-6 border-t border-gray-100 flex justify-end gap-4">
-                        <Button variant="outline" type="button" onClick={() => navigate(-1)}>取消</Button>
-                        <Button variant="primary" type="submit" className="px-8" disabled={loading}>
+                    <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-end gap-4">
+                        <Button variant="outline" type="button" onClick={() => navigate(-1)} className="w-full sm:w-auto">取消</Button>
+                        <Button variant="primary" type="submit" className="px-8 w-full sm:w-auto" disabled={loading}>
                             <Save className="w-4 h-4 mr-2" />
                             {loading ? '處理中...' : '確認預約'}
                         </Button>

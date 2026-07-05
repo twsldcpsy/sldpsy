@@ -300,7 +300,7 @@ const GuardianDatabase = () => {
             </div>
 
             {/* List View */}
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-100 text-gray-600 text-sm">
@@ -357,10 +357,54 @@ const GuardianDatabase = () => {
                 </table>
             </div>
 
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+                {loading ? (
+                    <div className="py-8 text-center text-gray-400 bg-white rounded-xl border border-gray-100">載入中...</div>
+                ) : filteredGuardians.length === 0 ? (
+                    <div className="py-8 text-center text-gray-400 bg-white rounded-xl border border-gray-100">沒有符合條件的資料</div>
+                ) : (
+                    filteredGuardians.map((g) => (
+                        <div key={g.id} onClick={() => handleOpenEdit(g)} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm active:scale-[0.98] transition-transform">
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="min-w-0">
+                                    <div className="font-bold text-gray-800 text-lg truncate">{g.name}</div>
+                                    <div className="text-xs text-gray-400">{g.case_number}</div>
+                                </div>
+                                <span className={`flex-shrink-0 px-2 py-1 rounded-full text-xs font-medium ${g.status === '已結案' ? 'bg-gray-100 text-gray-500' : 'bg-green-100 text-green-700'}`}>
+                                    {g.status || '服務中'}
+                                </span>
+                            </div>
+                            <div className="space-y-1 text-sm text-gray-600">
+                                <div><span className="text-gray-400">股別／保護官：</span>{g.probation_officers?.department || '-'} / {g.probation_officers?.name || '-'}</div>
+                                <div><span className="text-gray-400">負責心理師：</span>{g.psychologists?.name || '-'}</div>
+                                <div><span className="text-gray-400">建檔時間：</span>{toROCDate(g.created_at)}</div>
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end gap-2">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleOpenEdit(g); }}
+                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="編輯"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(g.id); }}
+                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="刪除"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
             {/* Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200">
+                <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 overflow-y-auto p-4 sm:p-10">
+                    <div className="bg-white rounded-2xl p-5 sm:p-8 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200 mt-4 sm:mt-0 sm:my-auto mb-10 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-2xl font-bold text-primary">
                                 {isEditing ? '編輯家長資料' : '新增家長資料'}
@@ -371,13 +415,13 @@ const GuardianDatabase = () => {
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">家長姓名</label>
                                     <input
                                         type="text"
                                         required
-                                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
+                                        className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     />
@@ -386,7 +430,7 @@ const GuardianDatabase = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">狀態</label>
                                     <select
-                                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
+                                        className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
                                         value={formData.status}
                                         onChange={e => setFormData({ ...formData, status: e.target.value })}
                                     >
@@ -398,7 +442,7 @@ const GuardianDatabase = () => {
                                             <label className="block text-sm font-medium text-gray-700 mb-1">結案原因</label>
                                             <select
                                                 required
-                                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
+                                                className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
                                                 value={formData.closure_reason}
                                                 onChange={e => setFormData({ ...formData, closure_reason: e.target.value })}
                                             >
@@ -418,7 +462,7 @@ const GuardianDatabase = () => {
                                 <input
                                     type="text"
                                     required
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
                                     value={formData.case_number}
                                     onChange={e => setFormData({ ...formData, case_number: e.target.value })}
                                 />
@@ -433,7 +477,7 @@ const GuardianDatabase = () => {
                                 </div>
                                 <input
                                     type="text"
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
                                     value={formData.juvenile_name}
                                     onChange={e => setFormData({ ...formData, juvenile_name: e.target.value })}
                                 />
@@ -443,7 +487,7 @@ const GuardianDatabase = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">案件類型</label>
                                 <select
                                     disabled
-                                    className="w-full p-2 border border-gray-300 rounded-lg outline-none bg-gray-100 text-gray-500 cursor-not-allowed"
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg outline-none bg-gray-100 text-gray-500 cursor-not-allowed"
                                     value={formData.case_type}
                                     onChange={e => setFormData({ ...formData, case_type: e.target.value })}
                                 >
@@ -453,12 +497,12 @@ const GuardianDatabase = () => {
 
                             <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 space-y-3">
                                 <h4 className="text-sm font-bold text-gray-700">歸屬設定</h4>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">所屬股別</label>
                                         <select
                                             required
-                                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
+                                            className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
                                             value={formData.selected_department}
                                             onChange={e => handleDepartmentChange(e.target.value)}
                                         >
@@ -473,7 +517,7 @@ const GuardianDatabase = () => {
                                         <input
                                             type="text"
                                             readOnly
-                                            className="w-full p-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed"
+                                            className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm bg-gray-100 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed"
                                             value={selectedOfficerName || '---'}
                                         />
                                     </div>
@@ -483,7 +527,7 @@ const GuardianDatabase = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">負責心理師</label>
                                 <select
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
                                     value={formData.psychologist_id}
                                     onChange={e => setFormData({ ...formData, psychologist_id: e.target.value })}
                                 >
@@ -492,9 +536,9 @@ const GuardianDatabase = () => {
                                 </select>
                             </div>
 
-                            <div className="pt-4 flex justify-end gap-3">
-                                <Button variant="outline" type="button" onClick={() => setShowModal(false)}>取消</Button>
-                                <Button variant="primary" type="submit">
+                            <div className="pt-4 flex flex-col sm:flex-row justify-end gap-3">
+                                <Button variant="outline" type="button" onClick={() => setShowModal(false)} className="w-full sm:w-auto">取消</Button>
+                                <Button variant="primary" type="submit" className="w-full sm:w-auto">
                                     {isEditing ? '儲存變更' : '確認新增'}
                                 </Button>
                             </div>

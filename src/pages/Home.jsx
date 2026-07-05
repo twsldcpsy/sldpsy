@@ -117,9 +117,27 @@ const Home = () => {
 
                         <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
                             <div className="relative pl-4 border-l-2 border-primary/20 space-y-6">
-                                {/* v1.1.9 */}
+                                {/* v1.4.0 */}
                                 <div className="relative">
                                     <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-primary border-2 border-white shadow-sm"></div>
+                                    <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                                        v1.4.0 <span className="text-sm font-normal text-gray-500">115/7/5</span>
+                                    </h4>
+                                    <div className="text-gray-600 mt-1 text-sm leading-relaxed space-y-1">
+                                        <p>輔股心輔員持續發揮輔導知能及行政魔法，小耕同學持續喝茂昌草本茶含有粉角的飲品（非業配，而且微苦清仙涼茶比人生還苦），並在本次更新中調整及新增以下功能：</p>
+                                        <ul className="list-disc list-inside pl-2 space-y-1">
+                                            <li>爲符親職教育需要，新增「親職教育」類別，與少年資料庫並行管理家長資料，統計及核銷功能也同步調整</li>
+                                            <li>修改所有權限者之篩選功能邏輯，讓複選成爲可能</li>
+                                            <li>修正月曆視圖心理師顏色分配邏輯，確保不同心理師顏色不重複</li>
+                                            <li>系統管理員工具升級，包含核銷（匯出日期格式調整）、公佈欄（個別化顯示）、預約管理（備忘功能），以期提升行政效率</li>
+                                            <li>優化手機移動端使用體驗，提升 web app 適配性</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* v1.1.9 */}
+                                <div className="relative">
+                                    <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-gray-300 border-2 border-white shadow-sm"></div>
                                     <h4 className="font-bold text-gray-800 flex items-center gap-2">
                                         v1.1.9 <span className="text-sm font-normal text-gray-500">115/3/22</span>
                                     </h4>

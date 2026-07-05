@@ -80,8 +80,8 @@ const PsychologistLogin = () => {
     };
 
     return (
-        <div className="max-w-md mx-auto mt-20">
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+        <div className="max-w-md mx-auto mt-10 sm:mt-20">
+            <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-lg border border-gray-100">
                 <h2 className="text-2xl font-bold text-center text-primary mb-8">心理師登入</h2>
 
                 {error && (

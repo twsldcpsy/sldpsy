@@ -1,0 +1,12 @@
+{
+  "name": "心理諮商預約系統",
+  "short_name": "諮商預約",
+  "start_url": "/sldpsy/",
+  "scope": "/sldpsy/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2C3E50",
+  "icons": [
+    { "src": "/sldpsy/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

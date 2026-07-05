@@ -109,18 +109,19 @@ const Maintenance = () => {
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
 
-            <div className="flex flex-wrap md:flex-nowrap overflow-x-auto gap-3 mb-8 border-b border-gray-100 pb-4">
+            <div className="flex overflow-x-auto gap-3 mb-8 border-b border-gray-100 pb-4">
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${subTab === tab.id
+                        title={tab.label}
+                        className={`flex-shrink-0 whitespace-nowrap px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${subTab === tab.id
                             ? 'bg-secondary text-white shadow-md'
                             : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                             }`}
                         onClick={() => setSubTab(tab.id)}
                     >
                         <tab.icon className="w-4 h-4" />
-                        {tab.label}
+                        <span className="hidden sm:inline">{tab.label}</span>
                     </button>
                 ))}
             </div>

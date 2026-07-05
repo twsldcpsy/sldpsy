@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
-import { Filter, DollarSign, Clock, FileText, CheckCircle, XCircle, Copy, Check, Download } from 'lucide-react';
+import { Filter, DollarSign, Clock, FileText, CheckCircle, XCircle, Copy, Check, Download, Users } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { getCurrentROCYear, convertDateStringToROC, toROCFullDate } from '../../utils/dateUtils';
 
@@ -22,6 +22,7 @@ const WriteOffStats = () => {
     const [psychologists, setPsychologists] = useState([]);
     // Cache for filtering
     const [juvenileInfoMap, setJuvenileInfoMap] = useState({});
+    const [guardianInfoMap, setGuardianInfoMap] = useState({});
 
     useEffect(() => {
         fetchData();
@@ -56,6 +57,23 @@ const WriteOffStats = () => {
                 if (dept) depts.add(dept);
             });
             setJuvenileInfoMap(infoMap);
+
+            // 4. Fetch Guardians (親職教育資料庫 cases), same shape as Juveniles
+            const { data: guardianData } = await supabase
+                .from('guardians')
+                .select('id, probation_officer_id');
+
+            const guardianMap = {};
+            guardianData?.forEach(g => {
+                const po = officerMap[g.probation_officer_id];
+                const dept = po?.department || '';
+
+                guardianMap[g.id] = { department: dept };
+
+                if (dept) depts.add(dept);
+            });
+            setGuardianInfoMap(guardianMap);
+
             setDepartments(Array.from(depts).sort());
         } catch (error) {
             console.error('Error fetching dropdowns:', error);
@@ -70,6 +88,10 @@ const WriteOffStats = () => {
                 .select(`
                     *,
                     juveniles (
+                        name,
+                        probation_officers (department)
+                    ),
+                    guardians (
                         name,
                         probation_officers (department)
                     ),
@@ -95,6 +117,17 @@ const WriteOffStats = () => {
         const month = date.getMonth() + 1;
         const day = date.getDate();
         return `${rocYear}年${month}月${day}日`;
+    };
+
+    // Resolve the linked case for a booking, regardless of whether it's a juvenile or a guardian
+    const getCaseDisplay = (b) => {
+        const isGuardian = !!b.guardian_id;
+        const caseRecord = isGuardian ? b.guardians : b.juveniles;
+        return {
+            isGuardian,
+            name: caseRecord?.name || '-',
+            department: caseRecord?.probation_officers?.department || ''
+        };
     };
 
     const getDurationHours = (start, end) => {
@@ -131,7 +164,7 @@ const WriteOffStats = () => {
             `;
 
             completedEntries.forEach(b => {
-                const line = `時間：${toROCFullDateNoPad(b.booking_date)} ${b.start_time?.slice(0, 5)}～${b.end_time?.slice(0, 5)} 個案：${b.juveniles?.name}`;
+                const line = `時間：${toROCFullDateNoPad(b.booking_date)} ${b.start_time?.slice(0, 5)}～${b.end_time?.slice(0, 5)} 個案：${getCaseDisplay(b).name}`;
                 htmlContent += `<p>${line}</p>`;
             });
 
@@ -173,7 +206,7 @@ const WriteOffStats = () => {
 
         // Department (Use Map)
         if (department) {
-            const rowDept = juvenileInfoMap[b.juvenile_id]?.department;
+            const rowDept = getCaseDisplay(b).department || (b.guardian_id ? guardianInfoMap[b.guardian_id]?.department : juvenileInfoMap[b.juvenile_id]?.department);
             if (rowDept !== department) return false;
         }
 
@@ -331,20 +364,20 @@ const WriteOffStats = () => {
 
             {/* DETAILS SECTION (BOTTOM) */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-h-[400px]">
-                <div className="flex border-b border-gray-200 justify-between items-center pr-2">
-                    <div className="flex flex-1">
+                <div className="flex flex-wrap border-b border-gray-200 justify-between items-center pr-2">
+                    <div className="flex flex-1 min-w-full sm:min-w-0">
                         <button
-                            className={`flex-1 py-4 text-sm font-medium text-center transition-colors ${subTab === 'completed' ? 'bg-secondary/5 text-secondary border-b-2 border-secondary' : 'text-gray-500 hover:bg-gray-50'}`}
+                            className={`flex-1 py-3 sm:py-4 text-xs sm:text-sm font-medium text-center transition-colors ${subTab === 'completed' ? 'bg-secondary/5 text-secondary border-b-2 border-secondary' : 'text-gray-500 hover:bg-gray-50'}`}
                             onClick={() => setSubTab('completed')}
                         >
-                            <CheckCircle className="w-4 h-4 inline-block mr-2" />
+                            <CheckCircle className="w-4 h-4 inline-block mr-1 sm:mr-2" />
                             完成諮商細目
                         </button>
                         <button
-                            className={`flex-1 py-4 text-sm font-medium text-center transition-colors ${subTab === 'daily_fee' ? 'bg-secondary/5 text-secondary border-b-2 border-secondary' : 'text-gray-500 hover:bg-gray-50'}`}
+                            className={`flex-1 py-3 sm:py-4 text-xs sm:text-sm font-medium text-center transition-colors ${subTab === 'daily_fee' ? 'bg-secondary/5 text-secondary border-b-2 border-secondary' : 'text-gray-500 hover:bg-gray-50'}`}
                             onClick={() => setSubTab('daily_fee')}
                         >
-                            <XCircle className="w-4 h-4 inline-block mr-2" />
+                            <XCircle className="w-4 h-4 inline-block mr-1 sm:mr-2" />
                             日費細目 (全日缺席)
                         </button>
                     </div>
@@ -364,11 +397,11 @@ const WriteOffStats = () => {
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-gray-50 text-gray-600 text-sm">
                                     <tr>
-                                        <th className="py-3 px-6">日期時間</th>
-                                        <th className="py-3 px-6">心理師</th>
-                                        <th className="py-3 px-6">少年姓名</th>
-                                        <th className="py-3 px-6 text-right">核銷時數</th>
-                                        <th className="py-3 px-6 text-right">費用 ($2000/hr)</th>
+                                        <th className="py-3 px-3 sm:px-6">日期時間</th>
+                                        <th className="py-3 px-3 sm:px-6">心理師</th>
+                                        <th className="py-3 px-3 sm:px-6">個案姓名</th>
+                                        <th className="py-3 px-3 sm:px-6 text-right">核銷時數</th>
+                                        <th className="py-3 px-3 sm:px-6 text-right">費用 ($2000/hr)</th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-gray-700 divide-y divide-gray-100">
@@ -379,7 +412,7 @@ const WriteOffStats = () => {
                                             const hours = getDurationHours(b.start_time, b.end_time);
                                             return (
                                                 <tr key={b.id} className="hover:bg-gray-50">
-                                                    <td className="py-3 px-6">
+                                                    <td className="py-3 px-3 sm:px-6">
                                                         <div className="font-medium flex items-center gap-2">
                                                             {convertDateStringToROC(b.booking_date)}
                                                             {b.status === '等待報告' && (
@@ -390,10 +423,15 @@ const WriteOffStats = () => {
                                                         </div>
                                                         <div className="text-xs text-gray-500">{b.start_time?.slice(0, 5)} - {b.end_time?.slice(0, 5)}</div>
                                                     </td>
-                                                    <td className="py-3 px-6">{b.psychologists?.name}</td>
-                                                    <td className="py-3 px-6">{b.juveniles?.name}</td>
-                                                    <td className="py-3 px-6 text-right font-bold">{hours} hr</td>
-                                                    <td className="py-3 px-6 text-right text-primary font-medium">${(hours * 2000).toLocaleString()}</td>
+                                                    <td className="py-3 px-3 sm:px-6">{b.psychologists?.name}</td>
+                                                    <td className="py-3 px-3 sm:px-6">
+                                                        <span className="inline-flex items-center gap-1">
+                                                            {getCaseDisplay(b).name}
+                                                            {b.guardian_id && <Users className="w-3.5 h-3.5 text-purple-500" title="強制親職教育" />}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-3 px-3 sm:px-6 text-right font-bold">{hours} hr</td>
+                                                    <td className="py-3 px-3 sm:px-6 text-right text-primary font-medium">${(hours * 2000).toLocaleString()}</td>
                                                 </tr>
                                             );
                                         })
@@ -408,10 +446,10 @@ const WriteOffStats = () => {
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-gray-50 text-gray-600 text-sm">
                                     <tr>
-                                        <th className="py-3 px-6">日期</th>
-                                        <th className="py-3 px-6">心理師</th>
-                                        <th className="py-3 px-6">缺席個案 (時間: 姓名)</th>
-                                        <th className="py-3 px-6 text-right">日費</th>
+                                        <th className="py-3 px-3 sm:px-6">日期</th>
+                                        <th className="py-3 px-3 sm:px-6">心理師</th>
+                                        <th className="py-3 px-3 sm:px-6">缺席個案 (時間: 姓名)</th>
+                                        <th className="py-3 px-3 sm:px-6 text-right">日費</th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-gray-700 divide-y divide-gray-100">
@@ -420,12 +458,12 @@ const WriteOffStats = () => {
                                     ) : (
                                         dailyFeeEntries.map((group, idx) => (
                                             <tr key={idx} className="hover:bg-gray-50">
-                                                <td className="py-3 px-6 font-medium">{convertDateStringToROC(group.date)}</td>
-                                                <td className="py-3 px-6">{group.psychologist?.name}</td>
-                                                <td className="py-3 px-6">
+                                                <td className="py-3 px-3 sm:px-6 font-medium">{convertDateStringToROC(group.date)}</td>
+                                                <td className="py-3 px-3 sm:px-6">{group.psychologist?.name}</td>
+                                                <td className="py-3 px-3 sm:px-6">
                                                     <div className="space-y-1">
                                                         {group.bookings.map(b => {
-                                                            const text = `時間：${toROCFullDateNoPad(b.booking_date)} ${b.start_time?.slice(0, 5)} 個案：${b.juveniles?.name} 未到`;
+                                                            const text = `時間：${toROCFullDateNoPad(b.booking_date)} ${b.start_time?.slice(0, 5)} 個案：${getCaseDisplay(b).name} 未到`;
                                                             return (
                                                                 <div key={b.id} className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded w-fit mb-1 flex items-center gap-2 group">
                                                                     <span>{text}</span>
@@ -441,7 +479,7 @@ const WriteOffStats = () => {
                                                         })}
                                                     </div>
                                                 </td>
-                                                <td className="py-3 px-6 text-right text-orange-600 font-bold">$500</td>
+                                                <td className="py-3 px-3 sm:px-6 text-right text-orange-600 font-bold">$500</td>
                                             </tr>
                                         ))
                                     )}

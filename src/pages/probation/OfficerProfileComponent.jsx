@@ -110,7 +110,7 @@ const OfficerProfileComponent = ({ officerId }) => {
     if (loading) return <div className="p-8 text-center text-gray-500">載入中...</div>;
 
     return (
-        <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-100 mt-4">
+        <div className="max-w-2xl mx-auto bg-white p-5 sm:p-8 rounded-xl shadow-sm border border-gray-100 mt-4">
             <h3 className="text-xl font-bold text-primary mb-6 flex items-center gap-2">
                 <User className="w-5 h-5" /> 個人資料維護
             </h3>
@@ -118,7 +118,7 @@ const OfficerProfileComponent = ({ officerId }) => {
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Read-Only Fields */}
-                    <div className="bg-gray-50 p-4 rounded-lg md:col-span-2 grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-lg md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-medium text-gray-500 mb-1">所屬股別</label>
                             <div className="font-bold text-gray-800">{formData.department}</div>
@@ -143,7 +143,7 @@ const OfficerProfileComponent = ({ officerId }) => {
                             <input
                                 type="text"
                                 required
-                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                                className="w-full pl-9 pr-3 py-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                             />
@@ -156,7 +156,7 @@ const OfficerProfileComponent = ({ officerId }) => {
                             <Hash className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
                             <input
                                 type="text"
-                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                                className="w-full pl-9 pr-3 py-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                                 value={formData.extension_number}
                                 onChange={e => setFormData({ ...formData, extension_number: e.target.value })}
                             />
@@ -169,7 +169,7 @@ const OfficerProfileComponent = ({ officerId }) => {
                             <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
                             <input
                                 type="text"
-                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                                className="w-full pl-9 pr-3 py-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                                 value={formData.contact_info}
                                 onChange={e => setFormData({ ...formData, contact_info: e.target.value })}
                             />
@@ -185,7 +185,7 @@ const OfficerProfileComponent = ({ officerId }) => {
                                 id="changeOfficerPwd"
                                 checked={showPasswordChange}
                                 onChange={e => setShowPasswordChange(e.target.checked)}
-                                className="rounded border-gray-300 text-primary focus:ring-primary"
+                                className="w-5 h-5 sm:w-4 sm:h-4 rounded border-gray-300 text-primary focus:ring-primary"
                             />
                             <label htmlFor="changeOfficerPwd" class="text-sm font-medium text-gray-700 cursor-pointer select-none">
                                 變更登入密碼
@@ -201,7 +201,7 @@ const OfficerProfileComponent = ({ officerId }) => {
                                         <input
                                             type="password"
                                             required={showPasswordChange}
-                                            className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded bg-white text-sm"
+                                            className="w-full pl-9 pr-3 py-2.5 sm:py-1.5 text-base sm:text-sm border border-gray-300 rounded bg-white"
                                             value={passwordData.oldPassword}
                                             onChange={e => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
                                         />
@@ -214,7 +214,7 @@ const OfficerProfileComponent = ({ officerId }) => {
                                         <input
                                             type="password"
                                             required={showPasswordChange}
-                                            className="w-full pl-9 pr-3 py-1.5 border border-blue-200 rounded bg-blue-50/20 text-sm focus:border-blue-400 outline-none"
+                                            className="w-full pl-9 pr-3 py-2.5 sm:py-1.5 text-base sm:text-sm border border-blue-200 rounded bg-blue-50/20 focus:border-blue-400 outline-none"
                                             value={passwordData.newPassword}
                                             onChange={e => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                                         />
@@ -227,7 +227,7 @@ const OfficerProfileComponent = ({ officerId }) => {
                                         <input
                                             type="password"
                                             required={showPasswordChange}
-                                            className="w-full pl-9 pr-3 py-1.5 border border-blue-200 rounded bg-blue-50/20 text-sm focus:border-blue-400 outline-none"
+                                            className="w-full pl-9 pr-3 py-2.5 sm:py-1.5 text-base sm:text-sm border border-blue-200 rounded bg-blue-50/20 focus:border-blue-400 outline-none"
                                             value={passwordData.confirmPassword}
                                             onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                                         />
@@ -239,7 +239,7 @@ const OfficerProfileComponent = ({ officerId }) => {
                 </div>
 
                 <div className="pt-4 flex justify-end">
-                    <Button variant="primary" type="submit" disabled={saving} className="min-w-[120px]">
+                    <Button variant="primary" type="submit" disabled={saving} className="min-w-[120px] w-full sm:w-auto">
                         {saving ? '儲存中...' : '儲存變更'}
                     </Button>
                 </div>

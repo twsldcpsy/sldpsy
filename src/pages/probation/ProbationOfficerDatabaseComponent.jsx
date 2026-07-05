@@ -148,7 +148,7 @@ const ProbationOfficerDatabase = () => {
                 </Button>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-100 text-gray-600 text-sm">
@@ -206,10 +206,57 @@ const ProbationOfficerDatabase = () => {
                 </table>
             </div>
 
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+                {loading ? (
+                    <div className="py-8 text-center text-gray-400 bg-white rounded-xl border border-gray-100">載入中...</div>
+                ) : officers.length === 0 ? (
+                    <div className="py-8 text-center text-gray-400 bg-white rounded-xl border border-gray-100">目前尚無資料</div>
+                ) : (
+                    officers.map((o) => (
+                        <div key={o.id} onClick={() => handleOpenEdit(o)} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm active:scale-[0.98] transition-transform">
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="min-w-0">
+                                    <div className="font-bold text-gray-800 text-lg truncate">{o.name}</div>
+                                    <div className="text-xs text-primary font-medium">{o.department || '-'}</div>
+                                </div>
+                                <span className={`flex-shrink-0 px-2 py-1 rounded-lg text-xs
+                                    ${o.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                                        o.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                                    {o.role === 'admin' ? '系統管理員' : o.role === 'manager' ? '管理員' : '一般權限'}
+                                </span>
+                            </div>
+                            <div className="space-y-1 text-sm text-gray-600">
+                                <div><span className="text-gray-400">聯繫方式：</span>{o.contact_info || '-'}</div>
+                                <div><span className="text-gray-400">分機號碼：</span>{o.extension_number || '-'}</div>
+                                <div><span className="text-gray-400">登入密碼：</span><span className="font-mono">{o.password}</span></div>
+                                <div><span className="text-gray-400">排序：</span><span className="font-mono">{o.display_order ?? 0}</span></div>
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end gap-2">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleOpenEdit(o); }}
+                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="編輯"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(o.id); }}
+                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="刪除"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
             {/* Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200">
+                <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 overflow-y-auto p-4 sm:p-10">
+                    <div className="bg-white rounded-2xl p-5 sm:p-8 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200 mt-4 sm:mt-0 sm:my-auto mb-10 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-2xl font-bold text-primary">
                                 {isEditing ? '編輯保護官資料' : '新增保護官資料'}
@@ -220,12 +267,12 @@ const ProbationOfficerDatabase = () => {
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">排序 (數字越小越前)</label>
                                     <input
                                         type="number"
-                                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
+                                        className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
                                         value={formData.display_order}
                                         onChange={e => setFormData({ ...formData, display_order: e.target.value })}
                                     />
@@ -236,7 +283,7 @@ const ProbationOfficerDatabase = () => {
                                         type="text"
                                         required
                                         placeholder="例如：忠股"
-                                        className="w-full p-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-blue-50/50"
+                                        className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-blue-200 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-blue-50/50"
                                         value={formData.department}
                                         onChange={e => setFormData({ ...formData, department: e.target.value })}
                                     />
@@ -247,7 +294,7 @@ const ProbationOfficerDatabase = () => {
                                 <input
                                     type="text"
                                     required
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 />
@@ -257,7 +304,7 @@ const ProbationOfficerDatabase = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">權限別</label>
                                 <select
                                     required
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
                                     value={formData.role}
                                     onChange={e => setFormData({ ...formData, role: e.target.value })}
                                 >
@@ -274,19 +321,19 @@ const ProbationOfficerDatabase = () => {
                                 <input
                                     type="text"
                                     required={!isEditing}
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none font-mono"
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none font-mono"
                                     value={formData.password}
                                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                                     placeholder={isEditing ? '輸入新密碼以重設' : ''}
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">聯繫方式</label>
                                     <input
                                         type="text"
-                                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
+                                        className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
                                         value={formData.contact_info}
                                         onChange={e => setFormData({ ...formData, contact_info: e.target.value })}
                                     />
@@ -295,16 +342,16 @@ const ProbationOfficerDatabase = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">分機號碼</label>
                                     <input
                                         type="text"
-                                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
+                                        className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
                                         value={formData.extension_number}
                                         onChange={e => setFormData({ ...formData, extension_number: e.target.value })}
                                     />
                                 </div>
                             </div>
 
-                            <div className="pt-4 flex justify-end gap-3">
-                                <Button variant="outline" type="button" onClick={() => setShowModal(false)}>取消</Button>
-                                <Button variant="primary" type="submit">
+                            <div className="pt-4 flex flex-col sm:flex-row justify-end gap-3">
+                                <Button variant="outline" type="button" onClick={() => setShowModal(false)} className="w-full sm:w-auto">取消</Button>
+                                <Button variant="primary" type="submit" className="w-full sm:w-auto">
                                     {isEditing ? '儲存變更' : '確認新增'}
                                 </Button>
                             </div>

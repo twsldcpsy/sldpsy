@@ -92,8 +92,8 @@ const PsychologistProfileModal = ({ psychologistId, onClose, onUpdate }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 sm:p-10 animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl p-5 sm:p-8 w-full max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto">
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
@@ -120,7 +120,7 @@ const PsychologistProfileModal = ({ psychologistId, onClose, onUpdate }) => {
                             <input
                                 type="text"
                                 required
-                                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                className="w-full p-3 sm:p-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                             />
@@ -129,7 +129,7 @@ const PsychologistProfileModal = ({ psychologistId, onClose, onUpdate }) => {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">身分別</label>
                             <select
-                                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white transition-all"
+                                className="w-full p-3 sm:p-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white transition-all"
                                 value={formData.qualification}
                                 onChange={e => setFormData({ ...formData, qualification: e.target.value })}
                             >
@@ -143,7 +143,7 @@ const PsychologistProfileModal = ({ psychologistId, onClose, onUpdate }) => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">聯繫方式 (選填)</label>
                             <input
                                 type="text"
-                                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                                className="w-full p-3 sm:p-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                                 value={formData.contact_info}
                                 placeholder="電話、Email 或其他備註"
                                 onChange={e => setFormData({ ...formData, contact_info: e.target.value })}
@@ -159,7 +159,7 @@ const PsychologistProfileModal = ({ psychologistId, onClose, onUpdate }) => {
                                     id="changePwd"
                                     checked={showPasswordChange}
                                     onChange={e => setShowPasswordChange(e.target.checked)}
-                                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                                    className="w-5 h-5 sm:w-4 sm:h-4 rounded border-gray-300 text-primary focus:ring-primary"
                                 />
                                 <label htmlFor="changePwd" class="text-sm font-medium text-gray-700 cursor-pointer select-none">
                                     變更登入密碼
@@ -173,7 +173,7 @@ const PsychologistProfileModal = ({ psychologistId, onClose, onUpdate }) => {
                                         <input
                                             type="password"
                                             required={showPasswordChange}
-                                            className="w-full p-2 border border-gray-300 rounded bg-white text-sm"
+                                            className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded bg-white"
                                             value={passwordData.oldPassword}
                                             onChange={e => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
                                         />
@@ -183,7 +183,7 @@ const PsychologistProfileModal = ({ psychologistId, onClose, onUpdate }) => {
                                         <input
                                             type="password"
                                             required={showPasswordChange}
-                                            className="w-full p-2 border border-blue-200 rounded bg-blue-50/20 text-sm focus:border-blue-400 outline-none"
+                                            className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-blue-200 rounded bg-blue-50/20 focus:border-blue-400 outline-none"
                                             value={passwordData.newPassword}
                                             onChange={e => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                                         />
@@ -193,7 +193,7 @@ const PsychologistProfileModal = ({ psychologistId, onClose, onUpdate }) => {
                                         <input
                                             type="password"
                                             required={showPasswordChange}
-                                            className="w-full p-2 border border-blue-200 rounded bg-blue-50/20 text-sm focus:border-blue-400 outline-none"
+                                            className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-blue-200 rounded bg-blue-50/20 focus:border-blue-400 outline-none"
                                             value={passwordData.confirmPassword}
                                             onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                                         />
@@ -203,9 +203,9 @@ const PsychologistProfileModal = ({ psychologistId, onClose, onUpdate }) => {
                             )}
                         </div>
 
-                        <div className="pt-4 flex justify-end gap-3">
-                            <Button variant="outline" type="button" onClick={onClose}>取消</Button>
-                            <Button variant="primary" type="submit">儲存變更</Button>
+                        <div className="pt-4 flex flex-col sm:flex-row justify-end gap-3">
+                            <Button variant="outline" type="button" onClick={onClose} className="w-full sm:w-auto">取消</Button>
+                            <Button variant="primary" type="submit" className="w-full sm:w-auto">儲存變更</Button>
                         </div>
                     </form>
                 )}

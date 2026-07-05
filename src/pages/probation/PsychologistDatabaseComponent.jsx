@@ -136,7 +136,7 @@ const PsychologistDatabase = () => {
             </div>
 
             {/* List View */}
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-100 text-gray-600 text-sm">
@@ -192,10 +192,55 @@ const PsychologistDatabase = () => {
                 </table>
             </div>
 
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+                {loading ? (
+                    <div className="py-8 text-center text-gray-400 bg-white rounded-xl border border-gray-100">載入中...</div>
+                ) : psychologists.length === 0 ? (
+                    <div className="py-8 text-center text-gray-400 bg-white rounded-xl border border-gray-100">目前尚無資料</div>
+                ) : (
+                    psychologists.map((p) => (
+                        <div key={p.id} onClick={() => handleOpenEdit(p)} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm active:scale-[0.98] transition-transform">
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="min-w-0">
+                                    <div className="font-bold text-gray-800 text-lg truncate">{p.name}</div>
+                                    <span className="inline-block mt-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded-lg text-xs">
+                                        {p.qualification || '未設定'}
+                                    </span>
+                                </div>
+                                <span className={`flex-shrink-0 px-2 py-1 rounded-full text-xs ${p.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                    {p.is_active ? '執業中' : '暫停執業'}
+                                </span>
+                            </div>
+                            <div className="space-y-1 text-sm text-gray-600">
+                                <div><span className="text-gray-400">聯繫方式：</span>{p.contact_info || '-'}</div>
+                                <div><span className="text-gray-400">登入密碼：</span><span className="font-mono">{p.password}</span></div>
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end gap-2">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleOpenEdit(p); }}
+                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="編輯"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}
+                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="刪除"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
             {/* Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
+                <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 overflow-y-auto p-4 sm:p-10">
+                    <div className="bg-white rounded-2xl p-5 sm:p-8 w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200 mt-4 sm:mt-0 sm:my-auto mb-10 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-2xl font-bold text-primary">
                                 {isEditing ? '編輯心理師' : '新增心理師'}
@@ -211,7 +256,7 @@ const PsychologistDatabase = () => {
                                 <input
                                     type="text"
                                     required
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 />
@@ -220,7 +265,7 @@ const PsychologistDatabase = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">身分別</label>
                                 <select
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
                                     value={formData.qualification}
                                     onChange={e => setFormData({ ...formData, qualification: e.target.value })}
                                 >
@@ -237,7 +282,7 @@ const PsychologistDatabase = () => {
                                 <input
                                     type="text"
                                     required={!isEditing}
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none font-mono"
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none font-mono"
                                     value={formData.password}
                                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                                     placeholder={isEditing ? '輸入新密碼以重設' : ''}
@@ -247,7 +292,7 @@ const PsychologistDatabase = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">聯繫方式 (選填)</label>
                                 <input
                                     type="text"
-                                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none"
                                     value={formData.contact_info}
                                     placeholder="電話、Email 或其他備註"
                                     onChange={e => setFormData({ ...formData, contact_info: e.target.value })}
@@ -262,7 +307,7 @@ const PsychologistDatabase = () => {
                                             type="radio"
                                             checked={formData.is_active}
                                             onChange={() => setFormData({ ...formData, is_active: true })}
-                                            className="text-secondary focus:ring-secondary"
+                                            className="w-5 h-5 sm:w-4 sm:h-4 text-secondary focus:ring-secondary"
                                         />
                                         <span>執業中</span>
                                     </label>
@@ -271,16 +316,16 @@ const PsychologistDatabase = () => {
                                             type="radio"
                                             checked={!formData.is_active}
                                             onChange={() => setFormData({ ...formData, is_active: false })}
-                                            className="text-gray-500 focus:ring-gray-500"
+                                            className="w-5 h-5 sm:w-4 sm:h-4 text-gray-500 focus:ring-gray-500"
                                         />
                                         <span>暫停執業</span>
                                     </label>
                                 </div>
                             </div>
 
-                            <div className="pt-4 flex justify-end gap-3">
-                                <Button variant="outline" type="button" onClick={() => setShowModal(false)}>取消</Button>
-                                <Button variant="primary" type="submit">
+                            <div className="pt-4 flex flex-col sm:flex-row justify-end gap-3">
+                                <Button variant="outline" type="button" onClick={() => setShowModal(false)} className="w-full sm:w-auto">取消</Button>
+                                <Button variant="primary" type="submit" className="w-full sm:w-auto">
                                     {isEditing ? '儲存變更' : '確認新增'}
                                 </Button>
                             </div>

@@ -257,8 +257,8 @@ const ManagerStats = () => {
                 <div className="flex items-center gap-2 text-gray-700 font-bold mb-4">
                     <Filter className="w-5 h-5" /> 統計篩選
                 </div>
-                <div className="flex gap-4">
-                    <div className="w-40">
+                <div className="flex flex-wrap gap-4">
+                    <div className="w-full sm:w-40">
                         <label className="block text-sm font-medium text-gray-700 mb-1">年度</label>
                         <MultiSelectFilter
                             label="所有年度"
@@ -267,7 +267,7 @@ const ManagerStats = () => {
                             onChange={setYear}
                         />
                     </div>
-                    <div className="w-40">
+                    <div className="w-full sm:w-40">
                         <label className="block text-sm font-medium text-gray-700 mb-1">月份</label>
                         <MultiSelectFilter
                             label="所有月份"
@@ -276,7 +276,7 @@ const ManagerStats = () => {
                             onChange={setMonth}
                         />
                     </div>
-                    <div className="w-40">
+                    <div className="w-full sm:w-40">
                         <label className="block text-sm font-medium text-gray-700 mb-1">股別</label>
                         <MultiSelectFilter
                             label="所有股別"

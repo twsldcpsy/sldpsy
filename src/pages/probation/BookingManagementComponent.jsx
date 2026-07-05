@@ -1251,8 +1251,8 @@ const BookingManagement = ({
             {/* Contact Info Modal */}
             {
                 contactModal.isOpen && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] animate-in fade-in duration-200">
-                        <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl relative">
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] overflow-y-auto p-4 animate-in fade-in duration-200">
+                        <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-sm shadow-xl relative max-h-[90vh] overflow-y-auto">
                             <button
                                 onClick={() => setContactModal({ ...contactModal, isOpen: false })}
                                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"

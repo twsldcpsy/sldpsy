@@ -90,8 +90,8 @@ const ProbationLogin = () => {
     };
 
     return (
-        <div className="max-w-md mx-auto mt-20">
-            <div className="bg-white p-8 rounded-2xl shadow-lg border-2 border-primary/10">
+        <div className="max-w-md mx-auto mt-10 sm:mt-20">
+            <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-lg border-2 border-primary/10">
                 <h2 className="text-2xl font-bold text-center text-primary mb-8">保護官登入</h2>
 
                 {error && (

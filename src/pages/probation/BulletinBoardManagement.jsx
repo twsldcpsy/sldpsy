@@ -246,8 +246,8 @@ const BulletinBoardManagement = () => {
 
             {/* Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+                <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 overflow-y-auto p-4 sm:p-10 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl p-5 sm:p-8 w-full max-w-lg shadow-2xl mt-4 sm:mt-0 sm:my-auto mb-10 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-gray-800">
                                 {isEditing ? '編輯公告' : '新增公告'}
@@ -263,7 +263,7 @@ const BulletinBoardManagement = () => {
                                 <input
                                     type="text"
                                     required
-                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                    className="w-full p-3 sm:p-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
                                     value={formData.title}
                                     placeholder="請輸入公告標題"
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
@@ -275,7 +275,7 @@ const BulletinBoardManagement = () => {
                                 <textarea
                                     required
                                     rows="5"
-                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none"
+                                    className="w-full p-3 sm:p-2.5 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none"
                                     value={formData.content}
                                     placeholder="請輸入公告詳細內容"
                                     onChange={e => setFormData({ ...formData, content: e.target.value })}
@@ -284,17 +284,17 @@ const BulletinBoardManagement = () => {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">上架期間 (選填，不填則不限制)</label>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-col sm:flex-row items-center gap-2">
                                     <input
                                         type="date"
-                                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                        className="w-full p-3 sm:p-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
                                         value={formData.start_date}
                                         onChange={e => setFormData({ ...formData, start_date: e.target.value })}
                                     />
                                     <span className="text-gray-400">~</span>
                                     <input
                                         type="date"
-                                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                                        className="w-full p-3 sm:p-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
                                         value={formData.end_date}
                                         onChange={e => setFormData({ ...formData, end_date: e.target.value })}
                                     />
@@ -308,7 +308,7 @@ const BulletinBoardManagement = () => {
                                     <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
                                         <input
                                             type="checkbox"
-                                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                                            className="w-5 h-5 sm:w-4 sm:h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
                                             checked={formData.target_all_psychologists}
                                             onChange={e => setFormData({ ...formData, target_all_psychologists: e.target.checked })}
                                         />
@@ -317,14 +317,14 @@ const BulletinBoardManagement = () => {
                                     <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
                                         <input
                                             type="checkbox"
-                                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                                            className="w-5 h-5 sm:w-4 sm:h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
                                             checked={formData.target_all_officers}
                                             onChange={e => setFormData({ ...formData, target_all_officers: e.target.checked })}
                                         />
                                         保護官 (全部)
                                     </label>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
                                         <label className="block text-xs font-medium text-gray-500 mb-1">個別心理師</label>
                                         <MultiSelectFilter
@@ -350,7 +350,7 @@ const BulletinBoardManagement = () => {
                                 <input
                                     id="is_active"
                                     type="checkbox"
-                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                                    className="w-5 h-5 sm:w-4 sm:h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
                                     checked={formData.is_active}
                                     onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
                                 />
@@ -359,9 +359,9 @@ const BulletinBoardManagement = () => {
                                 </label>
                             </div>
 
-                            <div className="pt-4 flex justify-end gap-3">
-                                <Button variant="outline" type="button" onClick={() => setShowModal(false)}>取消</Button>
-                                <Button variant="primary" type="submit">
+                            <div className="pt-4 flex flex-col sm:flex-row justify-end gap-3">
+                                <Button variant="outline" type="button" onClick={() => setShowModal(false)} className="w-full sm:w-auto">取消</Button>
+                                <Button variant="primary" type="submit" className="w-full sm:w-auto">
                                     {isEditing ? '儲存變更' : '確認發布'}
                                 </Button>
                             </div>
