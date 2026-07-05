@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import Button from '../../components/Button';
+import MultiSelectFilter from '../../components/MultiSelectFilter';
 import { Plus, X, Edit, Trash2, Search, Filter, Download, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { convertDateStringToROC, toROCDate } from '../../utils/dateUtils';
@@ -28,9 +29,9 @@ const GuardianDatabase = () => {
     // Filter State
     const [filters, setFilters] = useState({
         searchQuery: '',
-        status: '',
-        department: '',
-        psychologist_id: ''
+        status: [],
+        department: [],
+        psychologist_id: []
     });
 
     // Data for Dropdowns
@@ -207,11 +208,11 @@ const GuardianDatabase = () => {
             if (!name.includes(query) && !caseNum.includes(query)) return false;
         }
         // Status
-        if (filters.status && g.status !== filters.status) return false;
+        if (filters.status.length > 0 && !filters.status.includes(g.status)) return false;
         // Department
-        if (filters.department && g.probation_officers?.department !== filters.department) return false;
+        if (filters.department.length > 0 && !filters.department.includes(g.probation_officers?.department)) return false;
         // Psychologist
-        if (filters.psychologist_id && g.psychologist_id !== filters.psychologist_id) return false;
+        if (filters.psychologist_id.length > 0 && !filters.psychologist_id.includes(g.psychologist_id)) return false;
 
         return true;
     });
@@ -277,31 +278,24 @@ const GuardianDatabase = () => {
                         />
                         <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
                     </div>
-                    <select
-                        className="p-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                        value={filters.status}
-                        onChange={e => setFilters({ ...filters, status: e.target.value })}
-                    >
-                        <option value="">所有狀態</option>
-                        <option value="服務中">服務中</option>
-                        <option value="已結案">已結案</option>
-                    </select>
-                    <select
-                        className="p-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                        value={filters.department}
-                        onChange={e => setFilters({ ...filters, department: e.target.value })}
-                    >
-                        <option value="">所有股別</option>
-                        {uniqueDepartments.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                    <select
-                        className="p-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                        value={filters.psychologist_id}
-                        onChange={e => setFilters({ ...filters, psychologist_id: e.target.value })}
-                    >
-                        <option value="">所有心理師</option>
-                        {psychologists.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
+                    <MultiSelectFilter
+                        label="所有狀態"
+                        options={[{ value: '服務中', label: '服務中' }, { value: '已結案', label: '已結案' }]}
+                        selected={filters.status}
+                        onChange={vals => setFilters({ ...filters, status: vals })}
+                    />
+                    <MultiSelectFilter
+                        label="所有股別"
+                        options={uniqueDepartments.map(d => ({ value: d, label: d }))}
+                        selected={filters.department}
+                        onChange={vals => setFilters({ ...filters, department: vals })}
+                    />
+                    <MultiSelectFilter
+                        label="所有心理師"
+                        options={psychologists.map(p => ({ value: p.id, label: p.name }))}
+                        selected={filters.psychologist_id}
+                        onChange={vals => setFilters({ ...filters, psychologist_id: vals })}
+                    />
                 </div>
             </div>
 

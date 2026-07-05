@@ -86,6 +86,17 @@ const WriteOffStats = () => {
     };
 
     // --- Calculation Helpers ---
+    // Same as toROCFullDate, but without zero-padding month/day (e.g. 115年1月1日)
+    const toROCFullDateNoPad = (dateOrString) => {
+        if (!dateOrString) return '';
+        const date = new Date(dateOrString);
+        if (isNaN(date.getTime())) return '';
+        const rocYear = date.getFullYear() - 1911;
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        return `${rocYear}年${month}月${day}日`;
+    };
+
     const getDurationHours = (start, end) => {
         if (!start || !end) return 0;
         const s = new Date(`1970-01-01T${start}`);
@@ -120,7 +131,7 @@ const WriteOffStats = () => {
             `;
 
             completedEntries.forEach(b => {
-                const line = `時間：${toROCFullDate(b.booking_date)} ${b.start_time?.slice(0, 5)}～${b.end_time?.slice(0, 5)} 個案：${b.juveniles?.name}`;
+                const line = `時間：${toROCFullDateNoPad(b.booking_date)} ${b.start_time?.slice(0, 5)}～${b.end_time?.slice(0, 5)} 個案：${b.juveniles?.name}`;
                 htmlContent += `<p>${line}</p>`;
             });
 
@@ -411,7 +422,7 @@ const WriteOffStats = () => {
                                                 <td className="py-3 px-6">
                                                     <div className="space-y-1">
                                                         {group.bookings.map(b => {
-                                                            const text = `時間：${toROCFullDate(b.booking_date)} ${b.start_time?.slice(0, 5)} 個案：${b.juveniles?.name} 未到`;
+                                                            const text = `時間：${toROCFullDateNoPad(b.booking_date)} ${b.start_time?.slice(0, 5)} 個案：${b.juveniles?.name} 未到`;
                                                             return (
                                                                 <div key={b.id} className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded w-fit mb-1 flex items-center gap-2 group">
                                                                     <span>{text}</span>

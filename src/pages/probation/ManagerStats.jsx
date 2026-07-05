@@ -2,18 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import { Filter, DollarSign, Clock, Users, FileText, PieChart, BarChart } from 'lucide-react';
 import { getCurrentROCYear, convertDateStringToROC } from '../../utils/dateUtils';
+import MultiSelectFilter from '../../components/MultiSelectFilter';
+
+const CASE_STAT_TYPES = [
+    { key: 'total', label: '總數' },
+    { key: 'juvenile', label: '少年數' },
+    { key: 'guardian', label: '家長數' }
+];
 
 const ManagerStats = () => {
     const [loading, setLoading] = useState(true);
     const [bookings, setBookings] = useState([]);
     const [juvenilesList, setJuvenilesList] = useState([]);
+    const [guardiansList, setGuardiansList] = useState([]);
 
     // Filters
     const currentROCYear = getCurrentROCYear();
-    const [year, setYear] = useState(currentROCYear);
-    const [month, setMonth] = useState('all'); // 'all' or 1-12
-    const [department, setDepartment] = useState('');
+    const [year, setYear] = useState([currentROCYear]);
+    const [month, setMonth] = useState([]); // [] means all months
+    const [department, setDepartment] = useState([]);
     const [departments, setDepartments] = useState([]);
+
+    // Distribution table view toggles
+    const [deptStatType, setDeptStatType] = useState('total');
+    const [psychStatType, setPsychStatType] = useState('total');
 
     // Stats State
     const [stats, setStats] = useState({
@@ -22,8 +34,8 @@ const ManagerStats = () => {
         totalHours: 0,
         dailyFeeCount: 0,
         dailyFeeTotal: 0,
-        deptCounts: {},
-        psychCounts: {}
+        deptCounts: { total: {}, juvenile: {}, guardian: {} },
+        psychCounts: { total: {}, juvenile: {}, guardian: {} }
     });
 
     useEffect(() => {
@@ -47,7 +59,7 @@ const ManagerStats = () => {
 
     useEffect(() => {
         calculateStats();
-    }, [bookings, juvenilesList, year, month, department]);
+    }, [bookings, juvenilesList, guardiansList, year, month, department]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -85,18 +97,36 @@ const ManagerStats = () => {
                 `)
                 .eq('status', '服務中');
 
+            // 2b. Fetch Guardians (親職教育資料庫 cases), same shape as Juveniles
+            const { data: guardianData, error: guardianError } = await supabase
+                .from('guardians')
+                .select(`
+                    id,
+                    status,
+                    probation_officer_id,
+                    psychologists (name)
+                `)
+                .eq('status', '服務中');
+
             if (bookingsError) throw bookingsError;
             if (juvError) throw juvError;
+            if (guardianError) throw guardianError;
 
             setBookings(bookingsData || []);
 
-            // 3. Manually attach probation_officers info to juvenilesList
+            // 3. Manually attach probation_officers info to juvenilesList / guardiansList
             const safeJuvList = juvData?.map(j => ({
                 ...j,
                 probation_officers: officerMap[j.probation_officer_id] || {}
             })) || [];
 
+            const safeGuardianList = guardianData?.map(g => ({
+                ...g,
+                probation_officers: officerMap[g.probation_officer_id] || {}
+            })) || [];
+
             setJuvenilesList(safeJuvList);
+            setGuardiansList(safeGuardianList);
         } catch (error) {
             console.error('Error fetching manager stats:', error);
         } finally {
@@ -124,13 +154,13 @@ const ManagerStats = () => {
         const filtered = bookings.filter(b => {
             const d = new Date(b.booking_date);
             // Year Filter (Compare ROC Year)
-            if ((d.getFullYear() - 1911) !== parseInt(year)) return false;
+            if (year.length > 0 && !year.includes(d.getFullYear() - 1911)) return false;
             // Month Filter
-            if (month !== 'all' && (d.getMonth() + 1) !== parseInt(month)) return false;
+            if (month.length > 0 && !month.includes(d.getMonth() + 1)) return false;
             // Department Filter (Use Map)
-            if (department) {
+            if (department.length > 0) {
                 const rowDept = infoMap[b.juvenile_id]?.department;
-                if (rowDept !== department) return false;
+                if (!department.includes(rowDept)) return false;
             }
             return true;
         });
@@ -161,21 +191,42 @@ const ManagerStats = () => {
         // 4. Total Spending
         const totalSpending = hourlyFeeTotal + dailyFeeTotal;
 
-        // 5. Distributions (Active Case Load from Juveniles Table)
-        const deptMap = {};
-        const psychMap = {};
+        // 5. Distributions (Active Case Load from Juveniles + Guardians Tables)
+        const deptMapJuvenile = {};
+        const psychMapJuvenile = {};
+        const deptMapGuardian = {};
+        const psychMapGuardian = {};
 
-        // Use the fetched juveniles list directly
         juvenilesList.forEach(j => {
             // Apply Department Filter to Distribution Stats too
-            if (department && j.probation_officers?.department !== department) return;
+            if (department.length > 0 && !department.includes(j.probation_officers?.department)) return;
 
             const dept = j.probation_officers?.department || '未分配';
             const psychName = j.psychologists?.name || '未分配';
 
-            deptMap[dept] = (deptMap[dept] || 0) + 1;
-            psychMap[psychName] = (psychMap[psychName] || 0) + 1;
+            deptMapJuvenile[dept] = (deptMapJuvenile[dept] || 0) + 1;
+            psychMapJuvenile[psychName] = (psychMapJuvenile[psychName] || 0) + 1;
         });
+
+        guardiansList.forEach(g => {
+            if (department.length > 0 && !department.includes(g.probation_officers?.department)) return;
+
+            const dept = g.probation_officers?.department || '未分配';
+            const psychName = g.psychologists?.name || '未分配';
+
+            deptMapGuardian[dept] = (deptMapGuardian[dept] || 0) + 1;
+            psychMapGuardian[psychName] = (psychMapGuardian[psychName] || 0) + 1;
+        });
+
+        const mergeCounts = (...maps) => {
+            const merged = {};
+            maps.forEach(map => {
+                Object.entries(map).forEach(([key, count]) => {
+                    merged[key] = (merged[key] || 0) + count;
+                });
+            });
+            return merged;
+        };
 
         setStats({
             totalSpending,
@@ -183,8 +234,16 @@ const ManagerStats = () => {
             totalHours,
             dailyFeeCount,
             dailyFeeTotal,
-            deptCounts: deptMap,
-            psychCounts: psychMap
+            deptCounts: {
+                total: mergeCounts(deptMapJuvenile, deptMapGuardian),
+                juvenile: deptMapJuvenile,
+                guardian: deptMapGuardian
+            },
+            psychCounts: {
+                total: mergeCounts(psychMapJuvenile, psychMapGuardian),
+                juvenile: psychMapJuvenile,
+                guardian: psychMapGuardian
+            }
         });
     };
 
@@ -199,39 +258,30 @@ const ManagerStats = () => {
                 <div className="flex gap-4">
                     <div className="w-40">
                         <label className="block text-sm font-medium text-gray-700 mb-1">年度</label>
-                        <select
-                            className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-primary/20"
-                            value={year}
-                            onChange={e => setYear(e.target.value)}
-                        >
-                            {[currentROCYear, currentROCYear - 1, currentROCYear - 2].map(y => (
-                                <option key={y} value={y}>{y}年</option>
-                            ))}
-                        </select>
+                        <MultiSelectFilter
+                            label="所有年度"
+                            options={[currentROCYear, currentROCYear - 1, currentROCYear - 2].map(y => ({ value: y, label: `${y}年` }))}
+                            selected={year}
+                            onChange={setYear}
+                        />
                     </div>
                     <div className="w-40">
                         <label className="block text-sm font-medium text-gray-700 mb-1">月份</label>
-                        <select
-                            className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-primary/20"
-                            value={month}
-                            onChange={e => setMonth(e.target.value)}
-                        >
-                            <option value="all">全年度</option>
-                            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                                <option key={m} value={m}>{m}月</option>
-                            ))}
-                        </select>
+                        <MultiSelectFilter
+                            label="所有月份"
+                            options={Array.from({ length: 12 }, (_, i) => i + 1).map(m => ({ value: m, label: `${m}月` }))}
+                            selected={month}
+                            onChange={setMonth}
+                        />
                     </div>
                     <div className="w-40">
                         <label className="block text-sm font-medium text-gray-700 mb-1">股別</label>
-                        <select
-                            className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-primary/20"
-                            value={department}
-                            onChange={e => setDepartment(e.target.value)}
-                        >
-                            <option value="">所有股別</option>
-                            {departments.map(d => <option key={d} value={d}>{d}</option>)}
-                        </select>
+                        <MultiSelectFilter
+                            label="所有股別"
+                            options={departments.map(d => ({ value: d, label: d }))}
+                            selected={department}
+                            onChange={setDepartment}
+                        />
                     </div>
                 </div>
             </div>
@@ -272,23 +322,37 @@ const ManagerStats = () => {
 
                 {/* Dept Stats */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                    <div className="p-4 border-b border-gray-100 flex items-center gap-2">
-                        <PieChart className="w-5 h-5 text-gray-600" />
-                        <h3 className="font-bold text-gray-800">各股別少年數 (不重複)</h3>
+                    <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                            <PieChart className="w-5 h-5 text-gray-600" />
+                            <h3 className="font-bold text-gray-800">各股別個案數 (不重複)</h3>
+                        </div>
+                        <div className="flex gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200 w-fit">
+                            {CASE_STAT_TYPES.map(opt => (
+                                <button
+                                    key={opt.key}
+                                    type="button"
+                                    onClick={() => setDeptStatType(opt.key)}
+                                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${deptStatType === opt.key ? 'bg-secondary text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="bg-gray-50 text-gray-600 text-sm">
                                 <tr>
                                     <th className="py-3 px-4">股別</th>
-                                    <th className="py-3 px-4 text-right">少年數 (人)</th>
+                                    <th className="py-3 px-4 text-right">{CASE_STAT_TYPES.find(o => o.key === deptStatType)?.label} (人)</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {Object.keys(stats.deptCounts).length === 0 ? (
+                                {Object.keys(stats.deptCounts[deptStatType]).length === 0 ? (
                                     <tr><td colSpan="2" className="py-8 text-center text-gray-400">無資料</td></tr>
                                 ) : (
-                                    Object.entries(stats.deptCounts).map(([dept, count]) => (
+                                    Object.entries(stats.deptCounts[deptStatType]).map(([dept, count]) => (
                                         <tr key={dept} className="hover:bg-gray-50">
                                             <td className="py-3 px-4 font-medium">{dept}</td>
                                             <td className="py-3 px-4 text-right font-bold text-primary">{count}</td>
@@ -302,23 +366,37 @@ const ManagerStats = () => {
 
                 {/* Psych Stats */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                    <div className="p-4 border-b border-gray-100 flex items-center gap-2">
-                        <Users className="w-5 h-5 text-gray-600" />
-                        <h3 className="font-bold text-gray-800">各心理師少年數 (不重複)</h3>
+                    <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                            <Users className="w-5 h-5 text-gray-600" />
+                            <h3 className="font-bold text-gray-800">各心理師個案數 (不重複)</h3>
+                        </div>
+                        <div className="flex gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200 w-fit">
+                            {CASE_STAT_TYPES.map(opt => (
+                                <button
+                                    key={opt.key}
+                                    type="button"
+                                    onClick={() => setPsychStatType(opt.key)}
+                                    className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${psychStatType === opt.key ? 'bg-secondary text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="bg-gray-50 text-gray-600 text-sm">
                                 <tr>
                                     <th className="py-3 px-4">心理師</th>
-                                    <th className="py-3 px-4 text-right">少年數 (人)</th>
+                                    <th className="py-3 px-4 text-right">{CASE_STAT_TYPES.find(o => o.key === psychStatType)?.label} (人)</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {Object.keys(stats.psychCounts).length === 0 ? (
+                                {Object.keys(stats.psychCounts[psychStatType]).length === 0 ? (
                                     <tr><td colSpan="2" className="py-8 text-center text-gray-400">無資料</td></tr>
                                 ) : (
-                                    Object.entries(stats.psychCounts).map(([name, count]) => (
+                                    Object.entries(stats.psychCounts[psychStatType]).map(([name, count]) => (
                                         <tr key={name} className="hover:bg-gray-50">
                                             <td className="py-3 px-4 font-medium">{name}</td>
                                             <td className="py-3 px-4 text-right font-bold text-primary">{count}</td>

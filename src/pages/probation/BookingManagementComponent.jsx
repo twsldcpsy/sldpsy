@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import Button from '../../components/Button';
+import MultiSelectFilter from '../../components/MultiSelectFilter';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, Users, FileText, CheckCircle, XCircle, AlertCircle, Search, Filter, Plus, Edit, Trash2, Eye, Minus, List as ListIcon, Download, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { convertDateStringToROC, toROCFullDate, getCurrentROCYear, getTimeOptions, getPsychologistColor } from '../../utils/dateUtils';
@@ -37,10 +38,10 @@ const BookingManagement = ({
     // Filter State
     const [filters, setFilters] = useState({
         searchQuery: '',
-        status: '',
+        status: [],
         juvenile_id: '',
-        department: '',
-        psychologist_id: '',
+        department: [],
+        psychologist_id: [],
         room_number: '',
         startDate: '',
         endDate: '',
@@ -481,7 +482,7 @@ const BookingManagement = ({
             }
         }
         // Status
-        if (filters.status && b.status !== filters.status) return false;
+        if (filters.status.length > 0 && !filters.status.includes(b.status)) return false;
         // Juvenile
         if (filters.juvenile_id && b.juvenile_id !== filters.juvenile_id) return false;
         // Psychologist-Moved below to handle fixedPsychologistId priority check logic properly
@@ -491,14 +492,14 @@ const BookingManagement = ({
         if (fixedDepartment) {
             const rowDept = getCaseDisplay(b).department || (b.guardian_id ? guardianInfoMap[b.guardian_id]?.department : juvenileInfoMap[b.juvenile_id]?.department);
             if (rowDept !== fixedDepartment) return false;
-        } else if (filters.department) {
+        } else if (filters.department.length > 0) {
             const rowDept = getCaseDisplay(b).department || (b.guardian_id ? guardianInfoMap[b.guardian_id]?.department : juvenileInfoMap[b.juvenile_id]?.department);
-            if (rowDept !== filters.department) return false;
+            if (!filters.department.includes(rowDept)) return false;
         }
         // Psychologist (Deep check)
         if (fixedPsychologistId) {
             if (b.psychologist_id !== fixedPsychologistId) return false;
-        } else if (filters.psychologist_id && b.psychologist_id !== filters.psychologist_id) {
+        } else if (filters.psychologist_id.length > 0 && !filters.psychologist_id.includes(b.psychologist_id)) {
             return false;
         }
         // Room
@@ -673,34 +674,28 @@ const BookingManagement = ({
                     {/* Row 2: Category Filters */}
                     <div className="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                         {visibleFilters.includes('status') && (
-                            <select
-                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20 shadow-sm bg-white"
-                                value={filters.status}
-                                onChange={e => setFilters({ ...filters, status: e.target.value })}
-                            >
-                                <option value="">所有狀態</option>
-                                {statuses.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
+                            <MultiSelectFilter
+                                label="所有狀態"
+                                options={statuses.map(s => ({ value: s, label: s }))}
+                                selected={filters.status}
+                                onChange={vals => setFilters({ ...filters, status: vals })}
+                            />
                         )}
                         {visibleFilters.includes('department') && !fixedDepartment && (
-                            <select
-                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20 shadow-sm bg-white"
-                                value={filters.department}
-                                onChange={e => setFilters({ ...filters, department: e.target.value })}
-                            >
-                                <option value="">所有股別</option>
-                                {uniqueDepartments.map(d => <option key={d} value={d}>{d}</option>)}
-                            </select>
+                            <MultiSelectFilter
+                                label="所有股別"
+                                options={uniqueDepartments.map(d => ({ value: d, label: d }))}
+                                selected={filters.department}
+                                onChange={vals => setFilters({ ...filters, department: vals })}
+                            />
                         )}
                         {visibleFilters.includes('psychologist') && (
-                            <select
-                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20 shadow-sm bg-white"
-                                value={filters.psychologist_id}
-                                onChange={e => setFilters({ ...filters, psychologist_id: e.target.value })}
-                            >
-                                <option value="">所有心理師</option>
-                                {psychologists.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                            </select>
+                            <MultiSelectFilter
+                                label="所有心理師"
+                                options={psychologists.map(p => ({ value: p.id, label: p.name }))}
+                                selected={filters.psychologist_id}
+                                onChange={vals => setFilters({ ...filters, psychologist_id: vals })}
+                            />
                         )}
                         {visibleFilters.includes('room') && (
                             <select
