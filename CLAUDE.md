@@ -17,3 +17,8 @@
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 ```
+
+## 開發紀錄規則
+- 每完成一項功能或修正，必須在 `CHANGELOG.md` 的 `[Unreleased]` 區塊補上一行說明（有資料庫異動時註明 `supabase/` 的 SQL 檔名）。
+- 發布新版本時，將 `[Unreleased]` 內容改為新版本標題與日期，並同步更新 `src/pages/Home.jsx` 的「系統沿革」。
+- commit 訊息沿用「修正版本：○○完成」格式。
