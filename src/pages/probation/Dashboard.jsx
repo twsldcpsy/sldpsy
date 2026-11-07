@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { User, FileText, Database, Settings, Search, Plus, X, Save } from 'lucide-react';
+import { User, FileText, Database, Settings, Search, Plus, X, Save, ClipboardList } from 'lucide-react';
 import Button from '../../components/Button';
 import { supabase } from '../../supabase';
 import BulletinBoardWidget from '../../components/BulletinBoardWidget';
@@ -11,6 +11,7 @@ import ProbationOfficerDatabase from './ProbationOfficerDatabaseComponent';
 import BookingManagement from './BookingManagementComponent';
 import OfficerProfileComponent from './OfficerProfileComponent';
 import BulletinBoardManagement from './BulletinBoardManagement';
+import SurveyManagement from './SurveyManagement';
 import AdvancedStats from './AdvancedStats';
 import WriteOffStats from './WriteOffStats';
 import ManagerStats from './ManagerStats';
@@ -93,7 +94,7 @@ const DepartmentStats = ({ isAdmin }) => {
     );
 };
 
-const Maintenance = () => {
+const Maintenance = ({ adminId }) => {
     const [subTab, setSubTab] = useState('bookings');
 
     const tabs = [
@@ -104,6 +105,7 @@ const Maintenance = () => {
         { id: 'stats_adv', label: '進階統計', icon: Database },
         { id: 'writeoff', label: '核銷作業', icon: FileText },
         { id: 'bulletins', label: '公告欄維護', icon: FileText },
+        { id: 'surveys', label: '問卷管理', icon: ClipboardList },
     ];
 
     return (
@@ -134,6 +136,7 @@ const Maintenance = () => {
                 {subTab === 'stats_adv' && <AdvancedStats />}
                 {subTab === 'writeoff' && <WriteOffStats />}
                 {subTab === 'bulletins' && <BulletinBoardManagement />}
+                {subTab === 'surveys' && <SurveyManagement adminId={adminId} />}
             </div>
         </div>
     );
@@ -160,7 +163,7 @@ const Dashboard = () => {
             </div>
 
             {/* Public Bulletin Board */}
-            <BulletinBoardWidget viewerRole={role} department={departmentName} />
+            <BulletinBoardWidget viewerRole={role} department={departmentName} officerId={officerId} />
 
             {/* Tabs */}
             <div className="flex border-b border-gray-200 overflow-x-auto">
@@ -197,7 +200,7 @@ const Dashboard = () => {
             <div className="mt-6">
                 {activeTab === 'cases' && <GeneralTab isAdmin={isSystemAdmin} departmentName={departmentName} officerId={officerId} />}
                 {activeTab === 'stats' && isManager && <DepartmentStats isAdmin={isSystemAdmin} />}
-                {activeTab === 'admin' && isSystemAdmin && <Maintenance />}
+                {activeTab === 'admin' && isSystemAdmin && <Maintenance adminId={officerId} />}
             </div>
         </div>
     );

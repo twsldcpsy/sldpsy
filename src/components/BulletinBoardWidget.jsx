@@ -2,19 +2,43 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { Megaphone, ChevronDown, ChevronUp, Bell, Users } from 'lucide-react';
 import { toROCDate } from '../utils/dateUtils';
+import SurveyForm from './SurveyForm';
+import { SurveyCards, SurveyReminderPopup } from './SurveyNotices';
 
 const BulletinBoardWidget = ({
     viewerRole = null, // 'admin' | 'manager' | 'general' | 'psychologist'
     department = null, // Viewer's own department, for officer/manager audience matching
-    psychologistId = null // Viewer's own psychologist id, for psychologist audience matching
+    psychologistId = null, // Viewer's own psychologist id, for psychologist audience matching
+    officerId = null // Viewer's own officer id, for survey audience matching
 }) => {
     const [allBulletins, setAllBulletins] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(true);
+    const [surveys, setSurveys] = useState([]);
+    const [openSurveyId, setOpenSurveyId] = useState(null);
+
+    // Survey respondent identity (psychologists and officers are separate tables)
+    const isPsychologist = viewerRole === 'psychologist';
+    const viewerId = isPsychologist ? psychologistId : officerId;
+    const viewer = viewerId ? { type: isPsychologist ? 'psychologist' : 'officer', id: viewerId } : null;
 
     useEffect(() => {
         fetchBulletins();
     }, []);
+
+    useEffect(() => {
+        if (viewer) fetchSurveys();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viewer?.type, viewer?.id]);
+
+    const fetchSurveys = async () => {
+        const { data, error } = await supabase.rpc('survey_list_for_me', { p_type: viewer.type, p_id: viewer.id });
+        if (error) {
+            console.error('Error fetching surveys:', error);
+            return;
+        }
+        setSurveys(data || []);
+    };
 
     const fetchBulletins = async () => {
         try {
@@ -75,8 +99,8 @@ const BulletinBoardWidget = ({
                     <div>
                         <h3 className="font-bold text-gray-800 flex items-center gap-2">
                             系統公告
-                            <span className={`${bulletins.length > 0 ? 'bg-red-500' : 'bg-gray-400'} text-white text-xs px-2 py-0.5 rounded-full`}>
-                                {bulletins.length}
+                            <span className={`${bulletins.length + surveys.length > 0 ? 'bg-red-500' : 'bg-gray-400'} text-white text-xs px-2 py-0.5 rounded-full`}>
+                                {bulletins.length + surveys.length}
                             </span>
                         </h3>
                     </div>
@@ -88,6 +112,11 @@ const BulletinBoardWidget = ({
 
             {isExpanded && (
                 <div className="px-6 pb-4 cursor-default">
+                    {surveys.length > 0 && (
+                        <div className="mb-3">
+                            <SurveyCards surveys={surveys} onOpen={setOpenSurveyId} />
+                        </div>
+                    )}
                     {loading ? (
                         <div className="text-gray-500 text-sm py-2">載入公告中...</div>
                     ) : bulletins.length === 0 ? (
@@ -118,6 +147,18 @@ const BulletinBoardWidget = ({
                         </div>
                     )}
                 </div>
+            )}
+
+            {viewer && (
+                <SurveyReminderPopup surveys={surveys} viewer={viewer} onOpen={setOpenSurveyId} />
+            )}
+            {viewer && openSurveyId && (
+                <SurveyForm
+                    viewer={viewer}
+                    surveyId={openSurveyId}
+                    onClose={() => setOpenSurveyId(null)}
+                    onSubmitted={() => { setOpenSurveyId(null); fetchSurveys(); }}
+                />
             )}
         </div>
     );
