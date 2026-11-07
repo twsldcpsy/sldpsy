@@ -109,6 +109,17 @@ returns boolean language sql stable as $$
   end
 $$;
 
+-- 題目的「結構」：不含說明文字與分段文字。已有人填答後，只要結構不變就允許修改說明與分段文字。
+create or replace function survey_questions_structure(p_questions jsonb) returns jsonb
+language sql immutable as $$
+  select coalesce(jsonb_agg(
+    case when e.value->>'type' = 'section'
+         then jsonb_build_object('id', e.value->'id', 'type', 'section')
+         else e.value - 'description'
+    end order by e.ord), '[]'::jsonb)
+  from jsonb_array_elements(p_questions) with ordinality as e(value, ord)
+$$;
+
 -- 3. 管理員 RPC -----------------------------------------------
 
 create or replace function survey_admin_list(p_admin_id uuid) returns jsonb
@@ -120,7 +131,7 @@ begin
       select s.id, s.title, s.description, s.start_date, s.end_date, s.mode, s.fill_limit,
              s.edit_limit, s.is_anonymous, s.is_closed, s.target_all_psychologists,
              s.target_all_officers, s.target_psychologist_ids, s.target_departments,
-             s.created_at, jsonb_array_length(s.questions) as question_count,
+             s.created_at, (select count(*) from jsonb_array_elements(s.questions) e where e->>'type' <> 'section') as question_count,
              (select count(*) from survey_responses r where r.survey_id = s.id) as response_count,
              (select count(*) from survey_submissions u where u.survey_id = s.id and u.fill_count > 0) as respondent_count
       from surveys s
@@ -162,7 +173,9 @@ begin
   perform survey_assert_admin(p_admin_id);
 
   if coalesce(trim(p_survey->>'title'), '') = '' then raise exception '請輸入問卷標題'; end if;
-  if jsonb_typeof(v_questions) <> 'array' or jsonb_array_length(v_questions) = 0 then
+  if jsonb_typeof(v_questions) <> 'array' or not exists (
+    select 1 from jsonb_array_elements(v_questions) e where e->>'type' <> 'section'
+  ) then
     raise exception '請至少新增一題';
   end if;
 
@@ -196,11 +209,11 @@ begin
     into v_has_responses;
 
   if v_has_responses and (
-       v_existing.questions is distinct from v_questions
+       survey_questions_structure(v_existing.questions) is distinct from survey_questions_structure(v_questions)
        or v_existing.mode <> v_mode
        or v_existing.is_anonymous <> v_anon
   ) then
-    raise exception '已有人填答，題目、作答模式與匿名設定不可更改';
+    raise exception '已有人填答，題目、選項、順序、作答模式與匿名設定不可更改（說明與分段文字仍可修改）';
   end if;
 
   update surveys set
@@ -421,6 +434,7 @@ begin
   for q in select value from jsonb_array_elements(s.questions) loop
     v_qid := q->>'id';
     v_type := q->>'type';
+    if v_type = 'section' then continue; end if; -- 分段只是版面分隔，不可作答
     v_show := q->'show_if';
     v_is_visible := true;
     if v_show is not null and jsonb_typeof(v_show) = 'object' then

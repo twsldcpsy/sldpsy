@@ -15,10 +15,29 @@ export const canTrigger = (type) => type === 'single' || type === 'scale';
 
 export const newQuestionId = () => `q_${Math.random().toString(36).slice(2, 8)}`;
 
+// 「分段」與題目放在同一個清單，只用來分隔區塊，不可作答
+export const isSection = (q) => q.type === 'section';
+
+export const createSection = () => ({
+    id: newQuestionId(),
+    type: 'section',
+    text: '',
+    description: ''
+});
+
+// 題號只算可作答的題目 (分段不佔題號)
+export const getQuestionNumbers = (questions) => {
+    const numbers = {};
+    let n = 0;
+    questions.forEach(q => { if (!isSection(q)) numbers[q.id] = ++n; });
+    return numbers;
+};
+
 export const createQuestion = (type = 'single') => ({
     id: newQuestionId(),
     type,
     text: '',
+    description: '',
     required: false,
     options: hasOptions(type) ? ['選項 1', '選項 2'] : [],
     scale_low: '',
@@ -41,7 +60,8 @@ export const sanitizeQuestions = (questions) => questions.map((q, i) => {
     if (!ref) return { ...q, show_if: null };
     const valid = getTriggerValues(ref);
     const values = (q.show_if.values || []).filter(v => valid.includes(v));
-    return { ...q, show_if: values.length > 0 ? { question_id: ref.id, values } : null };
+    // values 可以暫時是空的 (剛按下「設定條件顯示」、尚未勾選答案)，儲存時由編輯器檢查
+    return { ...q, show_if: { question_id: ref.id, values } };
 });
 
 // 依目前答案算出哪些題目該顯示 (與資料庫 survey_submit 的判斷邏輯一致)

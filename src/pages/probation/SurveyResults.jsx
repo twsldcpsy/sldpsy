@@ -4,7 +4,7 @@ import { supabase } from '../../supabase';
 import Button from '../../components/Button';
 import { ArrowLeft, Download, Unlock, EyeOff } from 'lucide-react';
 import { toROCDate } from '../../utils/dateUtils';
-import { hasOptions, SCALE_VALUES } from '../../utils/surveyUtils';
+import { hasOptions, SCALE_VALUES, isSection, getQuestionNumbers } from '../../utils/surveyUtils';
 
 const formatAnswer = (q, v) => {
     if (v === undefined || v === null) return '';
@@ -140,6 +140,7 @@ const SurveyResults = ({ adminId, surveyId, onBack }) => {
 
     if (loading) return <div className="py-10 text-center text-gray-400">載入中...</div>;
 
+    const numbers = getQuestionNumbers(survey.questions);
     const allowedLabel = survey.mode === 'single' && !survey.is_anonymous ? '修改' : '再填';
     const filledCount = roster.filter(r => r.fill_count > 0).length;
     const visibleRoster = roster.filter(r => rosterFilter === 'all' || (rosterFilter === 'done' ? r.fill_count > 0 : r.fill_count === 0));
@@ -165,7 +166,7 @@ const SurveyResults = ({ adminId, surveyId, onBack }) => {
                     row['填答時間'] = r.submitted_at ? toROCDate(r.submitted_at) : '';
                 }
                 row['身分/股別'] = r.respondent_group || '';
-                survey.questions.forEach((q, i) => { row[`${i + 1}. ${q.text}`] = formatAnswer(q, r.answers[q.id]); });
+                survey.questions.filter(q => !isSection(q)).forEach((q) => { row[`${numbers[q.id]}. ${q.text}`] = formatAnswer(q, r.answers[q.id]); });
                 return row;
             });
             const rosterRows = roster.map(r => ({
@@ -280,8 +281,8 @@ const SurveyResults = ({ adminId, surveyId, onBack }) => {
                     )}
                     {responses.length === 0 ? (
                         <div className="py-10 text-center text-gray-400 bg-white rounded-xl border border-gray-100">尚無人填答</div>
-                    ) : survey.questions.map((q, i) => (
-                        <QuestionStats key={q.id} q={q} index={i} responses={filteredResponses} groups={groups} compare={groupFilter === 'compare'} />
+) : survey.questions.filter(q => !isSection(q)).map((q) => (
+                        <QuestionStats key={q.id} q={q} index={numbers[q.id] - 1} responses={filteredResponses} groups={groups} compare={groupFilter === 'compare'} />
                     ))}
                 </div>
             )}

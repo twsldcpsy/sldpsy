@@ -1,8 +1,11 @@
 import React from 'react';
 import { BookOpen, Home, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Button from './Button';
 
 const Layout = ({ children }) => {
+    const navigate = useNavigate();
+
     return (
         <div className="min-h-screen bg-gray-50 font-sans text-primary">
             <nav className="bg-white shadow-sm border-b border-gray-100">
@@ -13,7 +16,7 @@ const Layout = ({ children }) => {
                             <span className="font-bold text-xl tracking-wide">臺灣士林地方法院心理諮商預約及管理系統</span>
                         </div>
                         <div>
-                            <Button variant="outline" className="p-2 md:py-1 md:px-4 text-xs md:text-sm flex items-center" onClick={() => window.location.href = '/'}>
+                            <Button variant="outline" className="p-2 md:py-1 md:px-4 text-xs md:text-sm flex items-center" onClick={() => navigate('/')}>
                                 <Home className="w-5 h-5 md:w-4 md:h-4 md:mr-1" />
                                 <span className="hidden md:inline">回到首頁</span>
                             </Button>

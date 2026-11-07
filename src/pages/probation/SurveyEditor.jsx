@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import Button from '../../components/Button';
 import MultiSelectFilter from '../../components/MultiSelectFilter';
-import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Lock } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Lock, Rows3 } from 'lucide-react';
 import {
-    QUESTION_TYPES, createQuestion, hasOptions, canTrigger, getTriggerValues,
-    sanitizeQuestions, getTodayString
+    QUESTION_TYPES, createQuestion, createSection, isSection, getQuestionNumbers, hasOptions, canTrigger,
+    getTriggerValues, sanitizeQuestions, getTodayString
 } from '../../utils/surveyUtils';
 
 const inputClass = 'w-full p-3 sm:p-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-500';
@@ -75,7 +75,8 @@ const SurveyEditor = ({ adminId, surveyId, copyFromId, onBack, onSaved }) => {
     }, []);
 
     const set = (patch) => setForm(f => ({ ...f, ...patch }));
-    const locked = hasResponses; // 已有人填答：題目、作答模式、匿名設定鎖定
+    const locked = hasResponses; // 已有人填答：題目、作答模式、匿名設定鎖定 (說明文字與分段文字仍可修正)
+    const numbers = getQuestionNumbers(form.questions);
 
     const setQuestions = (questions) => set({ questions: sanitizeQuestions(questions) });
     const updateQuestion = (index, patch) =>
@@ -99,7 +100,9 @@ const SurveyEditor = ({ adminId, surveyId, copyFromId, onBack, onSaved }) => {
     };
 
     const removeQuestion = (index) => {
-        if (form.questions.length === 1) return alert('至少需要一題');
+        if (!isSection(form.questions[index]) && form.questions.filter(q => !isSection(q)).length === 1) {
+            return alert('至少需要一題');
+        }
         setQuestions(form.questions.filter((_, i) => i !== index));
     };
 
@@ -111,7 +114,13 @@ const SurveyEditor = ({ adminId, surveyId, copyFromId, onBack, onSaved }) => {
             && form.target_psychologist_ids.length === 0 && form.target_departments.length === 0) {
             return '請至少選擇一個填寫對象';
         }
-        for (const [i, q] of form.questions.entries()) {
+        if (!form.questions.some(q => !isSection(q))) return '請至少新增一題';
+        for (const q of form.questions) {
+            if (isSection(q)) {
+                if (!q.text.trim()) return '有分段尚未輸入標題';
+                continue;
+            }
+            const i = numbers[q.id] - 1;
             if (!q.text.trim()) return `第 ${i + 1} 題尚未輸入題目`;
             if (hasOptions(q.type)) {
                 const opts = q.options.map(o => o.trim()).filter(Boolean);
@@ -132,6 +141,7 @@ const SurveyEditor = ({ adminId, surveyId, copyFromId, onBack, onSaved }) => {
         const questions = form.questions.map(q => ({
             ...q,
             text: q.text.trim(),
+            description: (q.description || '').trim(),
             options: hasOptions(q.type) ? q.options.map(o => o.trim()).filter(Boolean) : []
         }));
 
@@ -159,7 +169,7 @@ const SurveyEditor = ({ adminId, surveyId, copyFromId, onBack, onSaved }) => {
             {locked && (
                 <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg">
                     <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    已有人填答，題目、作答模式與匿名設定已鎖定；標題、說明、期間、對象與次數仍可修改。
+                    已有人填答，題目、選項、順序、作答模式與匿名設定已鎖定；標題、說明、期間、對象、次數，以及題目說明與分段文字仍可修改。
                 </div>
             )}
 
@@ -270,19 +280,34 @@ const SurveyEditor = ({ adminId, surveyId, copyFromId, onBack, onSaved }) => {
             <section className="space-y-4">
                 <h4 className="font-bold text-gray-800">題目</h4>
                 {form.questions.map((q, index) => {
+                    const arrows = !locked && (
+                        <div className="flex gap-1">
+                            <button type="button" onClick={() => moveQuestion(index, -1)} disabled={index === 0} className="p-2 text-gray-400 hover:text-gray-700 disabled:opacity-30" title="上移"><ChevronUp className="w-4 h-4" /></button>
+                            <button type="button" onClick={() => moveQuestion(index, 1)} disabled={index === form.questions.length - 1} className="p-2 text-gray-400 hover:text-gray-700 disabled:opacity-30" title="下移"><ChevronDown className="w-4 h-4" /></button>
+                            <button type="button" onClick={() => removeQuestion(index)} className="p-2 text-gray-400 hover:text-red-600" title="刪除"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                    );
+
+                    if (isSection(q)) {
+                        return (
+                            <div key={q.id} className="bg-blue-50 p-4 sm:p-5 rounded-xl border border-blue-200 space-y-3">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-sm font-bold text-blue-700 flex items-center gap-1.5"><Rows3 className="w-4 h-4" /> 分段</span>
+                                    {arrows}
+                                </div>
+                                <input className={inputClass} placeholder="分段標題 (例：第一部分 基本資料)" value={q.text} onChange={e => updateQuestion(index, { text: e.target.value })} />
+                                <textarea rows="2" className={`${inputClass} resize-none`} placeholder="分段說明 (選填)" value={q.description || ''} onChange={e => updateQuestion(index, { description: e.target.value })} />
+                            </div>
+                        );
+                    }
+
                     const triggers = form.questions.slice(0, index).filter(p => canTrigger(p.type));
                     const refQuestion = q.show_if ? form.questions.find(p => p.id === q.show_if.question_id) : null;
                     return (
                         <div key={q.id} className="bg-white p-4 sm:p-5 rounded-xl border border-gray-100 shadow-sm space-y-3">
                             <div className="flex items-center justify-between gap-2">
-                                <span className="text-sm font-bold text-primary">第 {index + 1} 題</span>
-                                {!locked && (
-                                    <div className="flex gap-1">
-                                        <button type="button" onClick={() => moveQuestion(index, -1)} disabled={index === 0} className="p-2 text-gray-400 hover:text-gray-700 disabled:opacity-30" title="上移"><ChevronUp className="w-4 h-4" /></button>
-                                        <button type="button" onClick={() => moveQuestion(index, 1)} disabled={index === form.questions.length - 1} className="p-2 text-gray-400 hover:text-gray-700 disabled:opacity-30" title="下移"><ChevronDown className="w-4 h-4" /></button>
-                                        <button type="button" onClick={() => removeQuestion(index)} className="p-2 text-gray-400 hover:text-red-600" title="刪除"><Trash2 className="w-4 h-4" /></button>
-                                    </div>
-                                )}
+                                <span className="text-sm font-bold text-primary">第 {numbers[q.id]} 題</span>
+                                {arrows}
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -291,6 +316,8 @@ const SurveyEditor = ({ adminId, surveyId, copyFromId, onBack, onSaved }) => {
                                 </select>
                                 <input className={`${inputClass} sm:col-span-2`} disabled={locked} placeholder="題目文字" value={q.text} onChange={e => updateQuestion(index, { text: e.target.value })} />
                             </div>
+
+                            <textarea rows="2" className={`${inputClass} resize-none`} placeholder="題目說明 (選填，顯示在題目下方)" value={q.description || ''} onChange={e => updateQuestion(index, { description: e.target.value })} />
 
                             {hasOptions(q.type) && (
                                 <div>
@@ -335,7 +362,7 @@ const SurveyEditor = ({ adminId, surveyId, copyFromId, onBack, onSaved }) => {
                                                 onChange={e => updateQuestion(index, { show_if: { question_id: e.target.value, values: [] } })}
                                             >
                                                 {triggers.map(t => (
-                                                    <option key={t.id} value={t.id}>第 {form.questions.indexOf(t) + 1} 題 {t.text.slice(0, 16)}</option>
+                                                    <option key={t.id} value={t.id}>第 {numbers[t.id]} 題 {t.text.slice(0, 16)}</option>
                                                 ))}
                                             </select>
                                             <span className="text-gray-600">的答案是下列任一項時才顯示：</span>
@@ -368,9 +395,14 @@ const SurveyEditor = ({ adminId, surveyId, copyFromId, onBack, onSaved }) => {
                 })}
 
                 {!locked && (
-                    <Button variant="outline" type="button" onClick={() => setQuestions([...form.questions, createQuestion('single')])} className="flex items-center gap-1">
-                        <Plus className="w-4 h-4" /> 新增題目
-                    </Button>
+                    <div className="flex flex-wrap gap-3">
+                        <Button variant="outline" type="button" onClick={() => setQuestions([...form.questions, createQuestion('single')])} className="flex items-center gap-1">
+                            <Plus className="w-4 h-4" /> 新增題目
+                        </Button>
+                        <Button variant="outline" type="button" onClick={() => setQuestions([...form.questions, createSection()])} className="flex items-center gap-1">
+                            <Rows3 className="w-4 h-4" /> 新增分段
+                        </Button>
+                    </div>
                 )}
             </section>
 

@@ -117,9 +117,20 @@ const Home = () => {
 
                         <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
                             <div className="relative pl-4 border-l-2 border-primary/20 space-y-6">
-                                {/* v1.4.0 */}
+                                {/* v1.5.0 */}
                                 <div className="relative">
                                     <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-primary border-2 border-white shadow-sm"></div>
+                                    <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                                        v1.5.0 <span className="text-sm font-normal text-gray-500">115/11/7</span>
+                                    </h4>
+                                    <p className="text-gray-600 mt-1 text-sm leading-relaxed">
+                                        系統實實將滿週歲，偷偷更新問卷功能，好蒐集更多資訊（和海水過濾器）來獨自升級！
+                                    </p>
+                                </div>
+
+                                {/* v1.4.0 */}
+                                <div className="relative">
+                                    <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-gray-300 border-2 border-white shadow-sm"></div>
                                     <h4 className="font-bold text-gray-800 flex items-center gap-2">
                                         v1.4.0 <span className="text-sm font-normal text-gray-500">115/7/5</span>
                                     </h4>

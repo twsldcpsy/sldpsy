@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabase';
 import Button from './Button';
 import { X, EyeOff } from 'lucide-react';
-import { SCALE_VALUES, getVisibleQuestionIds, isAnswerEmpty, getMySurveyState } from '../utils/surveyUtils';
+import { SCALE_VALUES, getVisibleQuestionIds, isAnswerEmpty, getMySurveyState, isSection, getQuestionNumbers } from '../utils/surveyUtils';
 
 const inputClass = 'w-full p-3 sm:p-2.5 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none disabled:bg-gray-100';
 
@@ -31,11 +31,23 @@ const SurveyForm = ({ viewer, surveyId, onClose, onSubmitted }) => {
     const readOnly = !!state && !state.canAct;
     const visible = useMemo(() => (survey ? getVisibleQuestionIds(survey.questions, answers) : new Set()), [survey, answers]);
 
+    // 要顯示的項目：被隱藏的題目不顯示；分段底下沒有任何可見題目時，分段標題也一併隱藏
+    const items = useMemo(() => {
+        if (!survey) return [];
+        const shown = survey.questions.filter(q => visible.has(q.id));
+        return shown.filter((q, i) => {
+            if (!isSection(q)) return true;
+            const next = shown[i + 1];
+            return !!next && !isSection(next);
+        });
+    }, [survey, visible]);
+    const numbers = useMemo(() => getQuestionNumbers(items), [items]);
+
     const setAnswer = (id, value) => setAnswers(a => ({ ...a, [id]: value }));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const missing = survey.questions.find(q => visible.has(q.id) && q.required && isAnswerEmpty(answers[q.id]));
+        const missing = survey.questions.find(q => !isSection(q) && visible.has(q.id) && q.required && isAnswerEmpty(answers[q.id]));
         if (missing) return alert(`尚有必填題未作答：${missing.text}`);
 
         let confirmMsg = '確定要送出嗎？';
@@ -51,7 +63,7 @@ const SurveyForm = ({ viewer, surveyId, onClose, onSubmitted }) => {
 
         // 只送出目前顯示的題目，被隱藏題目的舊答案不留
         const payload = {};
-        survey.questions.forEach(q => { if (visible.has(q.id) && !isAnswerEmpty(answers[q.id])) payload[q.id] = answers[q.id]; });
+        survey.questions.forEach(q => { if (!isSection(q) && visible.has(q.id) && !isAnswerEmpty(answers[q.id])) payload[q.id] = answers[q.id]; });
 
         setSubmitting(true);
         const { error } = await supabase.rpc('survey_submit', {
@@ -148,11 +160,17 @@ const SurveyForm = ({ viewer, surveyId, onClose, onSubmitted }) => {
                             <p className="text-sm text-amber-700 bg-amber-50 rounded-lg p-3">修改次數已用完，以下為你送出的內容。如需再修改，請聯絡系統管理員。</p>
                         )}
 
-                        {survey.questions.filter(q => visible.has(q.id)).map((q, i) => (
+                        {items.map((q) => isSection(q) ? (
+                            <div key={q.id} className="pt-3 border-t-2 border-blue-100">
+                                <h4 className="text-base font-bold text-primary">{q.text}</h4>
+                                {q.description && <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">{q.description}</p>}
+                            </div>
+                        ) : (
                             <div key={q.id} className="space-y-2">
                                 <p className="text-sm font-medium text-gray-800">
-                                    {i + 1}. {q.text}{q.required && <span className="text-red-500 ml-1">*</span>}
+                                    {numbers[q.id]}. {q.text}{q.required && <span className="text-red-500 ml-1">*</span>}
                                 </p>
+                                {q.description && <p className="text-xs text-gray-500 whitespace-pre-wrap">{q.description}</p>}
                                 {renderInput(q)}
                             </div>
                         ))}
