@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import BookingManagement from '../probation/BookingManagementComponent';
 import PsychologistProfileModal from './PsychologistProfileModal';
 import BulletinBoardWidget from '../../components/BulletinBoardWidget';
 import { Settings } from 'lucide-react';
 
 const Dashboard = () => {
-    const navigate = useNavigate();
     const location = useLocation();
 
     // Fallback if no state (e.g. direct access), simpler handling for now

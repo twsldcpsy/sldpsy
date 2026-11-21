@@ -5,7 +5,7 @@
 
 ## [Unreleased]
 
-- （尚無）
+- 清理 lint 錯誤 16 項（移除未使用的 import／變數，不改行為）；eslint 設定忽略 dist 類產物、指定 verify 腳本為 Node 環境、允許大寫開頭的元件參數；3 個 useEffect 依賴警告經討論保留
 
 ## v1.5.0 — 2026-11-07（115/11/7）
 

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { User, FileText, Database, Settings, Search, Plus, X, Save, ClipboardList } from 'lucide-react';
 import Button from '../../components/Button';
-import { supabase } from '../../supabase';
 import BulletinBoardWidget from '../../components/BulletinBoardWidget';
 
 import CaseDatabase from './CaseDatabaseComponent';
@@ -17,7 +16,7 @@ import WriteOffStats from './WriteOffStats';
 import ManagerStats from './ManagerStats';
 
 // General Permissions Tab Content
-const GeneralTab = ({ isAdmin, departmentName, officerId }) => {
+const GeneralTab = ({ departmentName, officerId }) => {
     const [subTab, setSubTab] = useState('query');
 
     // Default View (Shared by all roles including Admin)
@@ -58,7 +57,7 @@ const GeneralTab = ({ isAdmin, departmentName, officerId }) => {
     );
 };
 
-const DepartmentStats = ({ isAdmin }) => {
+const DepartmentStats = () => {
     const [subTab, setSubTab] = useState('all_query');
 
     return (

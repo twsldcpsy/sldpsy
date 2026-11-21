@@ -70,7 +70,7 @@ const PsychologistDatabase = () => {
         try {
             if (isEditing) {
                 // Update basic info via RPC
-                const { data: success, error: updateError } = await supabase
+                const { error: updateError } = await supabase
                     .rpc('admin_update_psychologist', {
                         target_id: editingId,
                         p_name: formData.name,

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Save, X } from 'lucide-react';
 import Button from '../../components/Button';
 import { supabase } from '../../supabase';
-import { getTimeOptions } from '../../utils/dateUtils';
 
 const NewBooking = () => {
     const navigate = useNavigate();
