@@ -4,7 +4,7 @@ import Button from '../../components/Button';
 import MultiSelectFilter from '../../components/MultiSelectFilter';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, Users, FileText, CheckCircle, XCircle, AlertCircle, Search, Filter, Plus, Edit, Trash2, Eye, Minus, List as ListIcon, Download, X, Bell } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { convertDateStringToROC, toROCFullDate, getCurrentROCYear, getTimeOptions, getPsychologistColor } from '../../utils/dateUtils';
+import { convertDateStringToROC, getPsychologistColor } from '../../utils/dateUtils';
 
 const BookingManagement = ({
     readOnly = false,

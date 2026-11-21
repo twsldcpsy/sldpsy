@@ -23,7 +23,6 @@ const ProbationLogin = () => {
                 if (error) throw error;
 
                 // Extract unique departments, maintaining the order from the RPC result
-                const uniqueDepts = [...new Set(data.map(item => item.department))]; // department is correct field? Or departments.name? 
                 // RPC likely returns flat object with 'department' or 'departments' json? 
                 // Previous code assumed 'department' column. officer component uses 'officer.department || officer.departments?.name'.
                 // Let's check RPC return in officer component: `const { data } = await supabase.rpc('get_admin_view_officers'); setOfficers(data);`

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import { Filter, DollarSign, Clock, Users, FileText, PieChart, BarChart } from 'lucide-react';
-import { getCurrentROCYear, convertDateStringToROC } from '../../utils/dateUtils';
+import { getCurrentROCYear } from '../../utils/dateUtils';
 import MultiSelectFilter from '../../components/MultiSelectFilter';
 
 const CASE_STAT_TYPES = [

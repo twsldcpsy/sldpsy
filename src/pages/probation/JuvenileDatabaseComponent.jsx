@@ -4,7 +4,7 @@ import Button from '../../components/Button';
 import MultiSelectFilter from '../../components/MultiSelectFilter';
 import { Plus, X, Edit, Trash2, Search, Filter, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { convertDateStringToROC, toROCDate } from '../../utils/dateUtils';
+import { toROCDate } from '../../utils/dateUtils';
 
 const JuvenileDatabase = () => {
     const [juveniles, setJuveniles] = useState([]);
