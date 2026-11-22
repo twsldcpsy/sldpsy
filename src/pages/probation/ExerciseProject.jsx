@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { User, ArrowLeft, FolderKanban, CalendarDays, FileText } from 'lucide-react';
+import { User, ArrowLeft, FolderKanban, CalendarDays, FileText, ClipboardList } from 'lucide-react';
 import ExParticipantsManagement from './ExParticipantsManagement';
 import ExSessionsManagement from './ExSessionsManagement';
 import ExGroupPageManagement from './ExGroupPageManagement';
+import ExAssignmentsManagement from './ExAssignmentsManagement';
 
 // 「運動戒癮團體專案」頁面：專案管理者與專案成員皆可進入。
 // 各子頁逐頁加入；每頁自行決定專案管理者／專案成員的權限（資料庫也會驗證）。
@@ -16,6 +17,7 @@ const ExerciseProject = ({ project, isSystemAdmin, onBack }) => {
         { id: 'sessions', label: '活動課程管理', icon: CalendarDays },
         { id: 'participants', label: '參與少年資料庫維護', icon: User },
         { id: 'group_page', label: '團體頁面維護', icon: FileText },
+        { id: 'assignments', label: '工作分配維護', icon: ClipboardList },
     ];
 
     return (
@@ -50,6 +52,7 @@ const ExerciseProject = ({ project, isSystemAdmin, onBack }) => {
             <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                 {subTab === 'sessions' && <ExSessionsManagement />}
                 {subTab === 'participants' && <ExParticipantsManagement />}
+                {subTab === 'assignments' && <ExAssignmentsManagement />}
                 {subTab === 'group_page' && <ExGroupPageManagement canPublish={canPublish} />}
             </div>
         </div>
