@@ -10,7 +10,7 @@ import ExAssignmentsManagement from './ExAssignmentsManagement';
 const ExerciseProject = ({ project, isSystemAdmin, onBack }) => {
     const [subTab, setSubTab] = useState('sessions');
 
-    // 專案管理者與系統管理者可發布團體頁面
+    // 專案管理者與系統管理者：可發布團體頁面、可編輯工作分配
     const canPublish = isSystemAdmin || project.my_role === 'manager';
 
     const tabs = [
@@ -52,7 +52,7 @@ const ExerciseProject = ({ project, isSystemAdmin, onBack }) => {
             <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                 {subTab === 'sessions' && <ExSessionsManagement />}
                 {subTab === 'participants' && <ExParticipantsManagement />}
-                {subTab === 'assignments' && <ExAssignmentsManagement />}
+                {subTab === 'assignments' && <ExAssignmentsManagement canEdit={canPublish} />}
                 {subTab === 'group_page' && <ExGroupPageManagement canPublish={canPublish} />}
             </div>
         </div>

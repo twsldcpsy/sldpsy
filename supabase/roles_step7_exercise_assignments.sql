@@ -4,7 +4,8 @@
 --   1. ex_work_assignments：每位工作人員一份「主責項目」（計劃統籌／協同辦理，可留空）與「工作內容」（長文字）
 --   2. ex_assignment_list：列出本專案的全部成員（專案管理者、專案成員），
 --      人員被指派進專案時自動出現；股別、姓名、分機取自工作人員資料，僅「主責項目」「工作內容」在此維護
---   3. ex_assignment_save：專案管理者與專案成員皆可編輯主責項目與工作內容，對象限本專案成員
+--   3. ex_assignment_save：只有專案管理者（與系統管理者）可編輯主責項目與工作內容，對象限本專案成員；
+--      專案成員只能閱讀（ex_assignment_list）
 --   人員被移出專案後不再出現在列表，其工作內容保留，之後再加回專案時恢復
 -- 資料表不開放直接讀寫，僅能經 RPC 操作（資料庫內驗證 session）。
 -- 前提：roles_step1～6 已執行。
@@ -48,7 +49,7 @@ drop function if exists ex_assignment_save(uuid, text);
 create or replace function ex_assignment_save(p_officer_id uuid, p_content text, p_responsibility text default null) returns boolean
 language plpgsql security definer set search_path = public, extensions as $$
 begin
-  if not app_session_in_project('exercise_addiction') then raise exception '無權限'; end if;
+  if not app_session_is_project_manager('exercise_addiction') then raise exception '僅專案管理者可編輯'; end if;
   if length(coalesce(p_content, '')) > 20000 then raise exception '工作內容過長'; end if;
   if nullif(p_responsibility, '') is not null and p_responsibility not in ('計劃統籌', '協同辦理') then
     raise exception '主責項目錯誤';
