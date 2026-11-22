@@ -11,7 +11,7 @@ const STAFF_TYPES = ['保護官', '心輔員', '保護性社工', '測試人員'
 const roleLabel = (r) => (r === 'admin' ? '系統管理者' : r === 'manager' ? '審閱者' : '一般權限');
 
 // limited = true：專案管理者使用的受限版——不能編輯權限別（新增的帳號固定為一般權限），
-// 其餘欄位與新增、刪除皆可；重設密碼只限權限別為「一般權限」的帳號
+// 其餘欄位與新增皆可；刪除不能刪系統管理者帳號；重設密碼只限權限別為「一般權限」的帳號
 const ProbationOfficerDatabase = ({ limited = false }) => {
     const [officers, setOfficers] = useState([]);
     const [memberships, setMemberships] = useState([]);
@@ -63,6 +63,9 @@ const ProbationOfficerDatabase = ({ limited = false }) => {
 
     // 受限版只能重設權限別為一般權限的帳號密碼（避免重設系統管理者密碼後冒用）
     const canResetPassword = !limited || formData.role === 'general';
+
+    // 受限版不能刪除系統管理者帳號
+    const canDelete = (o) => !limited || o.role !== 'admin';
 
     const projectRolesOf = (officerId) => memberships.filter(m => m.officer_id === officerId);
 
@@ -243,8 +246,9 @@ const ProbationOfficerDatabase = ({ limited = false }) => {
                                         </button>
                                         <button
                                             onClick={() => handleDelete(o.id)}
-                                            className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                                            title="刪除"
+                                            disabled={!canDelete(o)}
+                                            className="p-1 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-400"
+                                            title={canDelete(o) ? '刪除' : '僅系統管理者可刪除系統管理者帳號'}
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -295,7 +299,8 @@ const ProbationOfficerDatabase = ({ limited = false }) => {
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleDelete(o.id); }}
-                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    disabled={!canDelete(o)}
+                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                     title="刪除"
                                 >
                                     <Trash2 className="w-4 h-4" />
