@@ -13,6 +13,8 @@
   - DB：`roles_step4_exercise_participants.sql`（`app_session_in_project`、`ex_participants`、`ex_participant_*`、`project_member_options`；可重複執行；**尚未對正式庫執行**，需在 step3 之後執行）
   - 運動戒癮團體專案新增子頁「活動課程管理」：年度（民國年下拉）、場次、日期（小月曆）、課程主題、運動項目、講師、場地、聯繫窗口、輪值人員與實際出席人員（本專案成員）、出席少年（從參與少年名單勾選）、狀態（規劃中／進行中／已結束／取消）；每一堂一筆，可「複製」建立下一場（場次加一、日期與出席清空）；專案管理者與專案成員皆可完整維護
   - DB：`roles_step5_exercise_sessions.sql`（`ex_sessions`、`ex_session_staff`、`ex_session_youths`、`ex_session_*` RPC；可重複執行；**尚未對正式庫執行**，需在 step4 之後執行）
+  - 運動戒癮團體專案新增子頁「團體頁面維護」：一頁式團體介紹／計畫書（團體簡介、目標與對象、課程內容、時程、轉介與參與方式、注意事項、聯繫窗口、近期活動自動帶入、可增刪排序的自訂章節；純文字），草稿與發布分開，專案管理者與專案成員可編輯草稿、僅專案管理者／系統管理者可發布與取消發布；發布後所有保護官在「普通權限」多一個子頁閱讀（心理師看不到），可列印／另存 PDF；近期活動只含日期、主題、運動項目、場地、狀態，不含少年與人員資料
+  - DB：`roles_step6_project_pages.sql`（`project_pages` 與 `project_page_*` RPC；可重複執行；**尚未對正式庫執行**，需在 step5 之後執行）
   - 只有一個專案且可進入時，點「專案權限」直接進入該專案，不需選擇（多個專案時才顯示專案列表）
   - 系統管理者頁保留完整版的工作人員維護、公告欄維護、問卷管理，以及專案管理
   - DB：`roles_step3_project_scope.sql`（專案 key、`app_session_is_project_manager`、心理師管理函式與問卷函式改驗專案管理者、`pm_*_officer`、`bulletins`／`surveys` 新增 `created_by` 與 RLS／觸發器；可重複執行；**尚未對正式庫執行**，需在 step1、step2 之後執行）

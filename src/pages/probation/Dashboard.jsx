@@ -11,13 +11,30 @@ import BulletinBoardManagement from './BulletinBoardManagement';
 import SurveyManagement from './SurveyManagement';
 import ProjectManagement from './ProjectManagement';
 import ProjectPermissionTab from './ProjectPermissionTab';
+import ProjectIntroView from './ProjectIntroView';
 import { PROJECT_ROLE_LABEL } from '../../utils/projectUtils';
 import { supabase } from '../../supabase';
 import ManagerStats from './ManagerStats';
 
 // General Permissions Tab Content
-const GeneralTab = ({ departmentName, officerId }) => {
+const GeneralTab = ({ departmentName, officerId, introPages }) => {
     const [subTab, setSubTab] = useState('query');
+    const [intro, setIntro] = useState({ key: null, data: null });
+    const introKey = subTab.startsWith('intro:') ? subTab.slice(6) : null;
+
+    // 已發布的專案介紹頁（例如運動戒癮團體）：點選子頁時才讀取內容
+    useEffect(() => {
+        if (!introKey) return;
+        let alive = true;
+        supabase.rpc('project_page_view', { p_key: introKey }).then(({ data, error }) => {
+            if (!alive) return;
+            if (error) console.error('Error loading intro page:', error);
+            setIntro({ key: introKey, data: data || null });
+        });
+        return () => { alive = false; };
+    }, [introKey]);
+    const introLoading = !!introKey && intro.key !== introKey;
+    const introData = intro.key === introKey ? intro.data : null;
 
     // Default View (Shared by all roles including Admin)
     return (
@@ -36,6 +53,15 @@ const GeneralTab = ({ departmentName, officerId }) => {
                 >
                     <User className="w-4 h-4 inline-block mr-1" /> 個人資料維護
                 </button>
+                {(introPages || []).map(p => (
+                    <button
+                        key={p.key}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${subTab === `intro:${p.key}` ? 'bg-secondary text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                        onClick={() => setSubTab(`intro:${p.key}`)}
+                    >
+                        <FileText className="w-4 h-4 inline-block mr-1" /> {p.title || p.name}
+                    </button>
+                ))}
             </div>
 
             {subTab === 'query' && (
@@ -52,6 +78,16 @@ const GeneralTab = ({ departmentName, officerId }) => {
                 <div>
                     <OfficerProfileComponent officerId={officerId} />
                 </div>
+            )}
+
+            {subTab.startsWith('intro:') && (
+                introLoading ? (
+                    <div className="py-8 text-center text-gray-400">載入中...</div>
+                ) : introData ? (
+                    <ProjectIntroView data={introData} />
+                ) : (
+                    <div className="py-8 text-center text-gray-400">此介紹頁目前未開放</div>
+                )
             )}
         </div>
     );
@@ -158,6 +194,20 @@ const Dashboard = () => {
         load();
     }, [officerId]);
     const myProjects = projects.filter(p => p.my_role);
+
+    // 已發布的專案介紹頁（顯示在「普通權限」）
+    const [introPages, setIntroPages] = useState([]);
+    useEffect(() => {
+        const loadIntro = async () => {
+            const { data, error } = await supabase.rpc('project_page_published_list');
+            if (error) {
+                console.error('Error fetching intro pages:', error);
+                return;
+            }
+            setIntroPages(data || []);
+        };
+        loadIntro();
+    }, [officerId]);
     // 專案成員、專案管理者可進入「專案權限」；系統管理者可看到全部頁面
     const showProjectTab = isSystemAdmin || myProjects.length > 0;
 
@@ -222,7 +272,7 @@ const Dashboard = () => {
 
             {/* Tab Content */}
             <div className="mt-6">
-                {activeTab === 'cases' && <GeneralTab isAdmin={isSystemAdmin} departmentName={departmentName} officerId={officerId} />}
+                {activeTab === 'cases' && <GeneralTab isAdmin={isSystemAdmin} departmentName={departmentName} officerId={officerId} introPages={introPages} />}
                 {activeTab === 'stats' && isManager && <DepartmentStats isAdmin={isSystemAdmin} />}
                 {activeTab === 'project' && showProjectTab && <ProjectPermissionTab projects={projects} isSystemAdmin={isSystemAdmin} officerId={officerId} />}
                 {activeTab === 'admin' && isSystemAdmin && <Maintenance adminId={officerId} />}

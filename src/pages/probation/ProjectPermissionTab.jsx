@@ -22,7 +22,7 @@ const ProjectPermissionTab = ({ projects, isSystemAdmin, officerId }) => {
     const onlyProject = list.length === 1 && canEnter(list[0]) ? list[0] : null;
     const openProject = onlyProject || list.find(p => p.id === openId && canEnter(p));
     if (openProject && openProject.key === 'exercise_addiction') {
-        return <ExerciseProject project={openProject} onBack={onlyProject ? null : () => setOpenId(null)} />;
+        return <ExerciseProject project={openProject} isSystemAdmin={isSystemAdmin} onBack={onlyProject ? null : () => setOpenId(null)} />;
     }
     if (openProject && openProject.key !== 'psy_service') {
         return <BlankProject project={openProject} onBack={onlyProject ? null : () => setOpenId(null)} />;

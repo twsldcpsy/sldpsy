@@ -13,3 +13,11 @@
     @apply bg-primary text-white font-bold py-2 px-4 rounded hover:bg-opacity-90 transition-all;
   }
 }
+
+/* 列印：只印出標示 .print-area 的區塊（例如專案介紹頁），其餘畫面隱藏 */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; border: none !important; }
+  .no-print { display: none !important; }
+}
