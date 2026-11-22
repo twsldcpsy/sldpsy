@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { User, FileText, Database, Settings, Search, Plus, X, Save, ClipboardList } from 'lucide-react';
+import { User, FileText, Database, Settings, Search, Plus, X, Save, ClipboardList, FolderKanban } from 'lucide-react';
 import Button from '../../components/Button';
 import BulletinBoardWidget from '../../components/BulletinBoardWidget';
 
@@ -11,6 +11,7 @@ import BookingManagement from './BookingManagementComponent';
 import OfficerProfileComponent from './OfficerProfileComponent';
 import BulletinBoardManagement from './BulletinBoardManagement';
 import SurveyManagement from './SurveyManagement';
+import ProjectManagement from './ProjectManagement';
 import AdvancedStats from './AdvancedStats';
 import WriteOffStats from './WriteOffStats';
 import ManagerStats from './ManagerStats';
@@ -105,6 +106,7 @@ const Maintenance = ({ adminId }) => {
         { id: 'writeoff', label: '核銷作業', icon: FileText },
         { id: 'bulletins', label: '公告欄維護', icon: FileText },
         { id: 'surveys', label: '問卷管理', icon: ClipboardList },
+        { id: 'projects', label: '專案管理', icon: FolderKanban },
     ];
 
     return (
@@ -136,6 +138,7 @@ const Maintenance = ({ adminId }) => {
                 {subTab === 'writeoff' && <WriteOffStats />}
                 {subTab === 'bulletins' && <BulletinBoardManagement />}
                 {subTab === 'surveys' && <SurveyManagement adminId={adminId} />}
+                {subTab === 'projects' && <ProjectManagement />}
             </div>
         </div>
     );
