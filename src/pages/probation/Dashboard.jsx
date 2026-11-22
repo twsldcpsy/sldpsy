@@ -100,7 +100,7 @@ const Maintenance = ({ adminId }) => {
         { id: 'bookings', label: '預約管理', icon: FileText },
         { id: 'juveniles', label: '個案資料庫維護', icon: User },
         { id: 'psychologists', label: '心理師資料庫維護', icon: User },
-        { id: 'officers', label: '保護官資料庫維護', icon: Settings },
+        { id: 'officers', label: '工作人員資料庫維護', icon: Settings },
         { id: 'stats_adv', label: '進階統計', icon: Database },
         { id: 'writeoff', label: '核銷作業', icon: FileText },
         { id: 'bulletins', label: '公告欄維護', icon: FileText },
@@ -157,7 +157,7 @@ const Dashboard = () => {
             <div className="flex justify-between items-center px-2">
                 <div>
                     <h1 className="text-3xl font-bold text-primary">保護官儀表板</h1>
-                    <p className="text-gray-500 mt-1">目前身分: {departmentName} <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full ml-2">{role === 'admin' ? '系統管理員' : role === 'manager' ? '管理員' : '一般權限'}</span></p>
+                    <p className="text-gray-500 mt-1">目前身分: {departmentName} <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full ml-2">{role === 'admin' ? '系統管理者' : role === 'manager' ? '審閱者' : '一般權限'}</span></p>
                 </div>
             </div>
 
@@ -174,13 +174,13 @@ const Dashboard = () => {
                     <User className="w-4 h-4" /> 普通權限
                 </button>
 
-                {/* Manager Tab - Available to Manager and Admin */}
+                {/* Reviewer (manager) Tab - Available to Reviewer and Admin */}
                 {isManager && (
                     <button
                         className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'stats' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                         onClick={() => setActiveTab('stats')}
                     >
-                        <Database className="w-4 h-4" /> 管理員權限
+                        <Database className="w-4 h-4" /> 審閱者權限
                     </button>
                 )}
 
@@ -190,7 +190,7 @@ const Dashboard = () => {
                         className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'admin' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                         onClick={() => setActiveTab('admin')}
                     >
-                        <Settings className="w-4 h-4" /> 系統管理員
+                        <Settings className="w-4 h-4" /> 系統管理者
                     </button>
                 )}
             </div>

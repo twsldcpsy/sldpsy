@@ -56,7 +56,7 @@ const ProbationLogin = () => {
             if (error) throw error;
 
             if (data && data.locked) {
-                setError(`此股別密碼錯誤次數過多，請於 ${Math.ceil(data.retry_after / 60)} 分鐘後再試，或請系統管理員協助重設密碼`);
+                setError(`此股別密碼錯誤次數過多，請於 ${Math.ceil(data.retry_after / 60)} 分鐘後再試，或請系統管理者協助重設密碼`);
                 return;
             }
 

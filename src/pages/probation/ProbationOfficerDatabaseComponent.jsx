@@ -6,6 +6,9 @@ import { Plus, X, Trash2, Edit, KeyRound } from 'lucide-react';
 // 新增帳號與「重設為預設密碼」共用的預設值
 const DEFAULT_PASSWORD = '28312321';
 
+const STAFF_TYPES = ['保護官', '心輔員', '保護性社工', '測試人員'];
+const roleLabel = (r) => (r === 'admin' ? '系統管理者' : r === 'manager' ? '審閱者' : '一般權限');
+
 const ProbationOfficerDatabase = () => {
     const [officers, setOfficers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -18,6 +21,7 @@ const ProbationOfficerDatabase = () => {
         name: '',
         department: '',
         role: 'general',
+        staff_type: '保護官',
         password: '',
         contact_info: '',
         extension_number: '',
@@ -52,6 +56,7 @@ const ProbationOfficerDatabase = () => {
             name: '',
             department: '',
             role: 'general',
+            staff_type: '保護官',
             password: DEFAULT_PASSWORD,
             contact_info: '',
             extension_number: '',
@@ -69,6 +74,7 @@ const ProbationOfficerDatabase = () => {
             name: officer.name,
             department: currentDepartment,
             role: officer.role || 'general',
+            staff_type: officer.staff_type || '保護官',
             password: '', // Hidden/Empty by default
             contact_info: officer.contact_info || '',
             extension_number: officer.extension_number || '',
@@ -88,6 +94,7 @@ const ProbationOfficerDatabase = () => {
                         o_name: formData.name,
                         o_department: formData.department,
                         o_role: formData.role,
+                        o_staff_type: formData.staff_type,
                         o_contact_info: formData.contact_info,
                         o_extension_number: formData.extension_number,
                         o_display_order: parseInt(formData.display_order) || 0
@@ -111,6 +118,7 @@ const ProbationOfficerDatabase = () => {
                         o_name: formData.name,
                         o_department: formData.department,
                         o_role: formData.role,
+                        o_staff_type: formData.staff_type,
                         o_password: formData.password || DEFAULT_PASSWORD,
                         o_contact_info: formData.contact_info,
                         o_extension_number: formData.extension_number,
@@ -129,7 +137,7 @@ const ProbationOfficerDatabase = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('確定要刪除此保護官資料嗎？')) return;
+        if (!window.confirm('確定要刪除此工作人員資料嗎？')) return;
 
         try {
             const { error } = await supabase
@@ -143,14 +151,14 @@ const ProbationOfficerDatabase = () => {
     };
 
     const handleResetToDefault = async (target) => {
-        if (!window.confirm(`確定要將「${target.name}」的密碼重設為預設密碼（${DEFAULT_PASSWORD}）嗎？\n請通知該保護官登入後自行修改密碼。`)) return;
+        if (!window.confirm(`確定要將「${target.name}」的密碼重設為預設密碼（${DEFAULT_PASSWORD}）嗎？\n請通知該工作人員登入後自行修改密碼。`)) return;
 
         try {
             const { error } = await supabase
                 .rpc('admin_reset_password_officer', { target_id: target.id, new_password: DEFAULT_PASSWORD });
 
             if (error) throw error;
-            alert(`已將「${target.name}」的密碼重設為預設密碼（${DEFAULT_PASSWORD}），請通知該保護官登入後自行修改。`);
+            alert(`已將「${target.name}」的密碼重設為預設密碼（${DEFAULT_PASSWORD}），請通知該工作人員登入後自行修改。`);
         } catch (error) {
             alert('重設失敗: ' + error.message);
         }
@@ -159,9 +167,9 @@ const ProbationOfficerDatabase = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-primary">保護官資料庫</h3>
+                <h3 className="text-xl font-bold text-primary">工作人員資料庫</h3>
                 <Button variant="primary" onClick={handleOpenAdd} className="flex items-center gap-1">
-                    <Plus className="w-4 h-4" /> 新增保護官
+                    <Plus className="w-4 h-4" /> 新增工作人員
                 </Button>
             </div>
 
@@ -171,9 +179,9 @@ const ProbationOfficerDatabase = () => {
                         <tr className="bg-gray-50 border-b border-gray-100 text-gray-600 text-sm">
                             <th className="py-3 px-4 w-20">排序</th>
                             <th className="py-3 px-4">股別</th>
-                            <th className="py-3 px-4">保護官姓名</th>
+                            <th className="py-3 px-4">姓名</th>
+                            <th className="py-3 px-4">身分</th>
                             <th className="py-3 px-4">權限別</th>
-                            <th className="py-3 px-4">登入密碼</th>
                             <th className="py-3 px-4">聯繫方式</th>
                             <th className="py-3 px-4">分機號碼</th>
                             <th className="py-3 px-4 text-center">操作</th>
@@ -190,14 +198,14 @@ const ProbationOfficerDatabase = () => {
                                     <td className="py-3 px-4 text-gray-400 font-mono">{o.display_order ?? 0}</td>
                                     <td className="py-3 px-4 font-bold text-primary">{o.department || '-'}</td>
                                     <td className="py-3 px-4 font-medium">{o.name}</td>
+                                    <td className="py-3 px-4">{o.staff_type || '保護官'}</td>
                                     <td className="py-3 px-4">
                                         <span className={`px-2 py-1 rounded-lg text-xs 
                                             ${o.role === 'admin' ? 'bg-purple-100 text-purple-700' :
                                                 o.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
-                                            {o.role === 'admin' ? '系統管理員' : o.role === 'manager' ? '管理員' : '一般權限'}
+                                            {roleLabel(o.role)}
                                         </span>
                                     </td>
-                                    <td className="py-3 px-4 font-mono text-sm"><span className="text-gray-400">已加密</span></td>
                                     <td className="py-3 px-4">{o.contact_info || '-'}</td>
                                     <td className="py-3 px-4">{o.extension_number || '-'}</td>
                                     <td className="py-3 px-4 flex justify-center gap-2">
@@ -240,13 +248,13 @@ const ProbationOfficerDatabase = () => {
                                 <span className={`flex-shrink-0 px-2 py-1 rounded-lg text-xs
                                     ${o.role === 'admin' ? 'bg-purple-100 text-purple-700' :
                                         o.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
-                                    {o.role === 'admin' ? '系統管理員' : o.role === 'manager' ? '管理員' : '一般權限'}
+                                    {roleLabel(o.role)}
                                 </span>
                             </div>
                             <div className="space-y-1 text-sm text-gray-600">
                                 <div><span className="text-gray-400">聯繫方式：</span>{o.contact_info || '-'}</div>
                                 <div><span className="text-gray-400">分機號碼：</span>{o.extension_number || '-'}</div>
-                                <div><span className="text-gray-400">登入密碼：</span><span className="font-mono"><span className="text-gray-400">已加密</span></span></div>
+                                <div><span className="text-gray-400">身分：</span>{o.staff_type || '保護官'}</div>
                                 <div><span className="text-gray-400">排序：</span><span className="font-mono">{o.display_order ?? 0}</span></div>
                             </div>
                             <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end gap-2">
@@ -276,7 +284,7 @@ const ProbationOfficerDatabase = () => {
                     <div className="bg-white rounded-2xl p-5 sm:p-8 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-200 mt-4 sm:mt-0 sm:my-auto mb-10 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-2xl font-bold text-primary">
-                                {isEditing ? '編輯保護官資料' : '新增保護官資料'}
+                                {isEditing ? '編輯工作人員資料' : '新增工作人員資料'}
                             </h3>
                             <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
                                 <X className="w-6 h-6" />
@@ -307,7 +315,7 @@ const ProbationOfficerDatabase = () => {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">保護官姓名</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">姓名</label>
                                 <input
                                     type="text"
                                     required
@@ -315,6 +323,18 @@ const ProbationOfficerDatabase = () => {
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">身分</label>
+                                <select
+                                    required
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
+                                    value={formData.staff_type}
+                                    onChange={e => setFormData({ ...formData, staff_type: e.target.value })}
+                                >
+                                    {STAFF_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
                             </div>
 
                             <div>
@@ -326,8 +346,8 @@ const ProbationOfficerDatabase = () => {
                                     onChange={e => setFormData({ ...formData, role: e.target.value })}
                                 >
                                     <option value="general">一般權限</option>
-                                    <option value="manager">管理員</option>
-                                    <option value="admin">系統管理員</option>
+                                    <option value="manager">審閱者</option>
+                                    <option value="admin">系統管理者</option>
                                 </select>
                             </div>
 

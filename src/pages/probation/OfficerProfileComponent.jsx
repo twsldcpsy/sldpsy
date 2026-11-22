@@ -129,7 +129,7 @@ const OfficerProfileComponent = ({ officerId }) => {
                                 <span className={`px-2 py-0.5 rounded text-xs font-medium
                                     ${formData.role === 'admin' ? 'bg-purple-100 text-purple-700' :
                                         formData.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'}`}>
-                                    {formData.role === 'admin' ? '系統管理員' : formData.role === 'manager' ? '管理員' : '一般權限'}
+                                    {formData.role === 'admin' ? '系統管理者' : formData.role === 'manager' ? '審閱者' : '一般權限'}
                                 </span>
                             </div>
                         </div>
