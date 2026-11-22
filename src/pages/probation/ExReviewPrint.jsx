@@ -38,7 +38,6 @@ export const ReviewSheet = ({ payload }) => {
             {print.show_youth !== false && (
                 <div className="border border-gray-300 mb-4">
                     <Cell label="少年姓名" value={y.name} />
-                    <Cell label="案號／編號" value={y.case_number} />
                     <Cell label="填寫人員" value={payload.filler_name} />
                     <Cell label="出席狀態" value={payload.attendance} />
                 </div>

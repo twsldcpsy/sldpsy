@@ -81,3 +81,14 @@ export const getTimeOptions = () => {
     }
     return times;
 };
+
+// 由出生日期（'YYYY-MM-DD'）計算目前的足歲；沒有日期回傳 null
+export const calcAge = (isoDate) => {
+    if (!isoDate) return null;
+    const [y, m, d] = String(isoDate).slice(0, 10).split('-').map(Number);
+    if (!y || !m || !d) return null;
+    const now = new Date();
+    let age = now.getFullYear() - y;
+    if (now.getMonth() + 1 < m || (now.getMonth() + 1 === m && now.getDate() < d)) age -= 1;
+    return age >= 0 ? age : null;
+};

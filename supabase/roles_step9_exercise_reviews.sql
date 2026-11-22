@@ -1,7 +1,9 @@
 -- ============================================================
 -- 權限調整 第 9 步：運動戒癮團體專案 —— 考核表（表單維護 + 活動課程連動）
 -- 內容：
---   1. ex_participants 新增「參與狀態」（參加中／已結束，既有資料預設參加中）
+--   1. ex_participants 新增「參與狀態」（參加中／已結束，既有資料預設參加中）、「處遇類型」（調查／保護管束／假日生活輔導）、
+--      「聯絡方式」（可多筆，身分為少年或家長 + 電話）；移除認輔人員欄位（認輔制度取消）；
+--      清單不再回傳案號與所屬股別
 --   2. ex_form_versions：考核表範本（欄位 + 匯出列印樣式）；每次修改產生新版本，舊版本保留，
 --      已填寫的資料永遠對應「當時」的版本（欄位與樣式不會被後來的修改改壞）
 --   3. ex_session_youths：每場活動每位少年的 出席狀態、考核狀態、分配的填寫人員、考核表資料
@@ -16,10 +18,21 @@
 -- 前提：roles_step1～8 已執行。
 -- ============================================================
 
--- 1. 參與狀態 ----------------------------------------------------------------
+-- 1. 參與少年：參與狀態、處遇類型、聯絡方式（可多筆），移除認輔人員 ---------------------------
 alter table ex_participants add column if not exists status text not null default '參加中';
 alter table ex_participants drop constraint if exists ex_participants_status_check;
 alter table ex_participants add constraint ex_participants_status_check check (status in ('參加中', '已結束'));
+
+alter table ex_participants add column if not exists treatment_type text;
+alter table ex_participants drop constraint if exists ex_participants_treatment_type_check;
+alter table ex_participants add constraint ex_participants_treatment_type_check
+  check (treatment_type is null or treatment_type in ('調查', '保護管束', '假日生活輔導'));
+
+-- 聯絡方式：[{role: '少年'|'家長', phone: '...'}]
+alter table ex_participants add column if not exists contacts jsonb not null default '[]'::jsonb;
+
+-- 認輔制度取消：移除認輔人員欄位（案號、股別、舊的聯絡方式欄位保留於資料表但不再顯示或回傳）
+alter table ex_participants drop column if exists counselor_id;
 
 create or replace function ex_participant_list() returns jsonb
 language plpgsql stable security definer set search_path = public, extensions as $$
@@ -28,11 +41,10 @@ begin
   return coalesce((
     select jsonb_agg(jsonb_build_object(
              'id', x.id, 'name', x.name, 'gender', x.gender, 'birth_date', x.birth_date,
-             'case_number', x.case_number, 'department', x.department,
-             'contact_info', x.contact_info, 'counselor_id', x.counselor_id,
-             'counselor_name', o.name, 'status', x.status, 'created_at', x.created_at)
+             'treatment_type', x.treatment_type, 'contacts', x.contacts,
+             'status', x.status, 'created_at', x.created_at)
            order by x.created_at desc)
-      from ex_participants x left join probation_officers o on o.id = x.counselor_id
+      from ex_participants x
   ), '[]'::jsonb);
 end;
 $$;
@@ -43,34 +55,38 @@ declare
   v_id uuid := nullif(p_data->>'id', '')::uuid;
   v_name text := trim(coalesce(p_data->>'name', ''));
   v_gender text := nullif(p_data->>'gender', '');
-  v_counselor uuid := nullif(p_data->>'counselor_id', '')::uuid;
   v_status text := coalesce(nullif(p_data->>'status', ''), '參加中');
+  v_treat text := nullif(p_data->>'treatment_type', '');
+  v_contacts jsonb := '[]'::jsonb;
+  e jsonb;
 begin
   if not app_session_in_project('exercise_addiction') then raise exception '無權限'; end if;
   if v_name = '' then raise exception '請輸入姓名'; end if;
   if v_gender is not null and v_gender not in ('男', '女', '其他') then raise exception '性別錯誤'; end if;
   if v_status not in ('參加中', '已結束') then raise exception '參與狀態錯誤'; end if;
-  if v_counselor is not null and not exists (
-       select 1 from project_members m join projects p on p.id = m.project_id
-        where p.key = 'exercise_addiction' and m.officer_id = v_counselor) then
-    raise exception '認輔人員必須是本專案的成員';
+  if v_treat is not null and v_treat not in ('調查', '保護管束', '假日生活輔導') then raise exception '處遇類型錯誤'; end if;
+
+  -- 聯絡方式：忽略電話為空的項目；身分只能是少年或家長
+  if p_data ? 'contacts' and jsonb_typeof(p_data->'contacts') = 'array' then
+    if jsonb_array_length(p_data->'contacts') > 10 then raise exception '聯絡方式最多 10 筆'; end if;
+    for e in select * from jsonb_array_elements(p_data->'contacts') loop
+      continue when trim(coalesce(e->>'phone', '')) = '';
+      if coalesce(e->>'role', '') not in ('少年', '家長') then raise exception '聯絡方式的身分只能是少年或家長'; end if;
+      if length(e->>'phone') > 50 then raise exception '電話過長'; end if;
+      v_contacts := v_contacts || jsonb_build_array(jsonb_build_object('role', e->>'role', 'phone', trim(e->>'phone')));
+    end loop;
   end if;
 
   if v_id is null then
-    insert into ex_participants (name, gender, birth_date, case_number, department, contact_info, counselor_id, status, created_by)
-    values (v_name, v_gender, nullif(p_data->>'birth_date', '')::date, nullif(trim(coalesce(p_data->>'case_number', '')), ''),
-            nullif(trim(coalesce(p_data->>'department', '')), ''), nullif(trim(coalesce(p_data->>'contact_info', '')), ''),
-            v_counselor, v_status, app_session_uid())
+    insert into ex_participants (name, gender, birth_date, treatment_type, contacts, status, created_by)
+    values (v_name, v_gender, nullif(p_data->>'birth_date', '')::date, v_treat, v_contacts, v_status, app_session_uid())
     returning id into v_id;
     return v_id;
   end if;
 
   update ex_participants set
     name = v_name, gender = v_gender, birth_date = nullif(p_data->>'birth_date', '')::date,
-    case_number = nullif(trim(coalesce(p_data->>'case_number', '')), ''),
-    department = nullif(trim(coalesce(p_data->>'department', '')), ''),
-    contact_info = nullif(trim(coalesce(p_data->>'contact_info', '')), ''),
-    counselor_id = v_counselor, status = v_status, updated_at = now()
+    treatment_type = v_treat, contacts = v_contacts, status = v_status, updated_at = now()
    where id = v_id;
   if not found then raise exception '找不到資料'; end if;
   return v_id;
@@ -283,8 +299,7 @@ begin
   return jsonb_build_object(
     'session', jsonb_build_object('id', s.id, 'year', s.year, 'session_no', s.session_no, 'session_date', s.session_date,
                                   'topic', s.topic, 'sport', s.sport, 'venue', s.venue, 'lecturer', s.lecturer),
-    'youth', jsonb_build_object('id', x.id, 'name', x.name, 'gender', x.gender, 'birth_date', x.birth_date,
-                                'case_number', x.case_number, 'department', x.department),
+    'youth', jsonb_build_object('id', x.id, 'name', x.name, 'gender', x.gender, 'birth_date', x.birth_date),
     'attendance', y.attendance, 'review_status', y.review_status,
     'filler_id', y.filler_id, 'filler_name', f_name,
     'stamped_at', y.stamped_at,

@@ -84,7 +84,7 @@ const ExFormsManagement = () => {
 
     const sample = {
         session: { year: 115, session_no: 1, session_date: new Date().toISOString().slice(0, 10), topic: '（範例主題）', sport: '（範例運動）', venue: '（範例場地）' },
-        youth: { name: '（範例少年）', case_number: 'E-001' },
+        youth: { name: '（範例少年）' },
         filler_name: '（範例填寫人員）', attendance: '出席',
         form: { fields, print }, data: {}
     };
@@ -166,7 +166,7 @@ const ExFormsManagement = () => {
                         </div>
                         <div className="flex flex-wrap gap-5 text-sm text-gray-700">
                             <label className="flex items-center gap-2"><input type="checkbox" checked={print.show_session !== false} onChange={e => setPrint({ ...print, show_session: e.target.checked })} /> 列印活動場次資訊（年度、場次、日期、主題、運動項目、場地）</label>
-                            <label className="flex items-center gap-2"><input type="checkbox" checked={print.show_youth !== false} onChange={e => setPrint({ ...print, show_youth: e.target.checked })} /> 列印少年資訊（姓名、案號、填寫人員、出席狀態）</label>
+                            <label className="flex items-center gap-2"><input type="checkbox" checked={print.show_youth !== false} onChange={e => setPrint({ ...print, show_youth: e.target.checked })} /> 列印少年資訊（姓名、填寫人員、出席狀態）</label>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">核章欄位（一行一個，留空則不印）</label>
