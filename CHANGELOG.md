@@ -9,6 +9,8 @@
   - 新增心理師帳號的預設密碼由 `password123` 改為 `psy`（僅前端預設值，不影響既有帳號）
   - 保護官／心理師資料庫的「編輯」視窗內，密碼欄下方新增「一鍵重設為預設密碼」按鈕（需確認）：忘記密碼時一鍵改回預設值（保護官 `28312321`、心理師 `psy`），使用者登入後自行修改；沿用既有 `admin_reset_password_*`，無 DB 異動
   - 已於 2026-11-22 對正式庫執行第一階段與第二階段
+  - 登入嘗試次數限制：15 分鐘內連續輸錯，心理師 5 次（以個人計）、保護官 10 次（以股別計）即鎖定 15 分鐘，鎖定期間連正確密碼也不受理；系統管理員重設密碼會同時解鎖；登入頁顯示鎖定提示
+  - DB：`secure_phase3_login_throttle.sql`（新增 `login_attempts`，更新 `login_*` 與 `admin_reset_password_*`；**尚未對正式庫執行**）
   - DB：`secure_phase1_additive.sql`（新增，先執行）→ 部署前端 → `secure_phase2_lockdown.sql`（收權限，後執行）
 
 - 清理 lint 錯誤 16 項（移除未使用的 import／變數，不改行為）；eslint 設定忽略 dist 類產物、指定 verify 腳本為 Node 環境、允許大寫開頭的元件參數；3 個 useEffect 依賴警告經討論保留
