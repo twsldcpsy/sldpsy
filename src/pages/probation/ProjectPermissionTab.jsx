@@ -3,6 +3,7 @@ import { FolderKanban } from 'lucide-react';
 import { PROJECT_ROLE_LABEL } from '../../utils/projectUtils';
 import PsyServiceProject from './PsyServiceProject';
 import BlankProject from './BlankProject';
+import ExerciseProject from './ExerciseProject';
 
 // 「專案權限」分頁：專案成員、專案管理者（及系統管理者）可進入。
 // 目前先列出自己參與的專案與專案身分；各專案的內容之後依專案逐一設計。
@@ -11,12 +12,18 @@ const ProjectPermissionTab = ({ projects, isSystemAdmin, officerId }) => {
     // 一般使用者只會拿到自己參與的專案；系統管理者拿到全部，其中沒有專案身分的另外標示
     const list = projects || [];
 
-    // 專案頁面：專案管理者與系統管理者可進入；尚無專屬頁面的專案先進入空白框架
-    const canEnter = (p) => p.is_active && (isSystemAdmin || p.my_role === 'manager');
+    // 專案頁面：專案管理者與系統管理者可進入；運動戒癮團體專案的專案成員也可進入（各子頁另有權限）；
+    // 尚無專屬頁面的專案先進入空白框架
+    const MEMBER_ENTRY_KEYS = ['exercise_addiction'];
+    const canEnter = (p) => p.is_active && (isSystemAdmin || p.my_role === 'manager'
+        || (p.my_role === 'member' && MEMBER_ENTRY_KEYS.includes(p.key)));
 
     // 只有一個專案、且可進入時，直接進入該專案，不需選擇（此時沒有「回到專案列表」）
     const onlyProject = list.length === 1 && canEnter(list[0]) ? list[0] : null;
     const openProject = onlyProject || list.find(p => p.id === openId && canEnter(p));
+    if (openProject && openProject.key === 'exercise_addiction') {
+        return <ExerciseProject project={openProject} onBack={onlyProject ? null : () => setOpenId(null)} />;
+    }
     if (openProject && openProject.key !== 'psy_service') {
         return <BlankProject project={openProject} onBack={onlyProject ? null : () => setOpenId(null)} />;
     }
