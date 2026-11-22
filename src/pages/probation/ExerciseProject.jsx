@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { User, ArrowLeft, FolderKanban, CalendarDays, FileText, ClipboardList, Receipt, Megaphone } from 'lucide-react';
+import { User, ArrowLeft, FolderKanban, CalendarDays, FileText, ClipboardList, Receipt, Megaphone, FileSpreadsheet } from 'lucide-react';
 import ExParticipantsManagement from './ExParticipantsManagement';
 import ExSessionsManagement from './ExSessionsManagement';
 import ExGroupPageManagement from './ExGroupPageManagement';
 import ExAssignmentsManagement from './ExAssignmentsManagement';
 import BulletinBoardManagement from './BulletinBoardManagement';
+import ExFormsManagement from './ExFormsManagement';
 
 // 「運動戒癮團體專案」頁面：專案管理者與專案成員皆可進入。
 // 各子頁逐頁加入；每頁自行決定專案管理者／專案成員的權限（資料庫也會驗證）。
@@ -22,6 +23,8 @@ const ExerciseProject = ({ project, isSystemAdmin, officerId, onBack }) => {
         { id: 'writeoff', label: '核銷作業', icon: Receipt },
         // 公告欄維護：僅專案管理者（與系統管理者）
         { id: 'bulletins', label: '公告欄維護', icon: Megaphone, managerOnly: true },
+        // 表單維護：僅專案管理者（與系統管理者）
+        { id: 'forms', label: '表單維護', icon: FileSpreadsheet, managerOnly: true },
     ].filter(t => !t.managerOnly || canPublish);
 
     return (
@@ -54,7 +57,7 @@ const ExerciseProject = ({ project, isSystemAdmin, officerId, onBack }) => {
             </div>
 
             <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                {subTab === 'sessions' && <ExSessionsManagement />}
+                {subTab === 'sessions' && <ExSessionsManagement isManager={canPublish} officerId={officerId} />}
                 {subTab === 'participants' && <ExParticipantsManagement />}
                 {subTab === 'assignments' && <ExAssignmentsManagement canEdit={canPublish} />}
                 {subTab === 'writeoff' && (
@@ -63,6 +66,7 @@ const ExerciseProject = ({ project, isSystemAdmin, officerId, onBack }) => {
                         功能開發中
                     </div>
                 )}
+                {subTab === 'forms' && canPublish && <ExFormsManagement />}
                 {subTab === 'bulletins' && canPublish && (
                     <BulletinBoardManagement projectId={project.id} ownerId={isSystemAdmin ? null : officerId} staffOnly />
                 )}

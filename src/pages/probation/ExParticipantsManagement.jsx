@@ -6,7 +6,8 @@ import { toROCDate } from '../../utils/dateUtils';
 
 const inputCls = 'w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none';
 const PROJECT_KEY = 'exercise_addiction';
-const EMPTY = { name: '', gender: '', birth_date: '', case_number: '', department: '', contact_info: '', counselor_id: '' };
+const EMPTY = { name: '', gender: '', birth_date: '', case_number: '', department: '', contact_info: '', counselor_id: '', status: '參加中' };
+const STATUS_STYLE = { '參加中': 'bg-green-100 text-green-700', '已結束': 'bg-gray-100 text-gray-500' };
 
 // 運動戒癮團體專案：參與少年資料庫維護（專案管理者與專案成員皆可完整維護）
 const ExParticipantsManagement = () => {
@@ -15,6 +16,7 @@ const ExParticipantsManagement = () => {
     const [counselors, setCounselors] = useState([]); // 本專案的成員
     const [departments, setDepartments] = useState([]);
     const [keyword, setKeyword] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
 
     const [showModal, setShowModal] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -56,7 +58,7 @@ const ExParticipantsManagement = () => {
         setForm({
             name: r.name || '', gender: r.gender || '', birth_date: r.birth_date || '',
             case_number: r.case_number || '', department: r.department || '',
-            contact_info: r.contact_info || '', counselor_id: r.counselor_id || ''
+            contact_info: r.contact_info || '', counselor_id: r.counselor_id || '', status: r.status || '參加中'
         });
         setShowModal(true);
     };
@@ -85,10 +87,10 @@ const ExParticipantsManagement = () => {
     };
 
     const q = keyword.trim().toLowerCase();
-    const filtered = rows.filter(r => !q
+    const filtered = rows.filter(r => (!statusFilter || r.status === statusFilter) && (!q
         || (r.name || '').toLowerCase().includes(q)
         || (r.case_number || '').toLowerCase().includes(q)
-        || (r.counselor_name || '').toLowerCase().includes(q));
+        || (r.counselor_name || '').toLowerCase().includes(q)));
 
     return (
         <div>
@@ -99,10 +101,17 @@ const ExParticipantsManagement = () => {
                 </Button>
             </div>
 
-            <div className="relative mb-4 max-w-sm">
-                <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
-                <input type="text" className={`${inputCls} pl-9`} placeholder="搜尋姓名、案號、認輔人員"
-                    value={keyword} onChange={e => setKeyword(e.target.value)} />
+            <div className="flex flex-wrap gap-3 mb-4">
+                <div className="relative w-full sm:w-80">
+                    <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                    <input type="text" className={`${inputCls} pl-9`} placeholder="搜尋姓名、案號、認輔人員"
+                        value={keyword} onChange={e => setKeyword(e.target.value)} />
+                </div>
+                <select className={`${inputCls} bg-white sm:w-40`} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+                    <option value="">所有參與狀態</option>
+                    <option value="參加中">參加中</option>
+                    <option value="已結束">已結束</option>
+                </select>
             </div>
 
             <div className="hidden md:block overflow-x-auto">
@@ -114,6 +123,7 @@ const ExParticipantsManagement = () => {
                             <th className="py-3 px-4">出生日期</th>
                             <th className="py-3 px-4">案號／編號</th>
                             <th className="py-3 px-4">所屬股別</th>
+                            <th className="py-3 px-4">參與狀態</th>
                             <th className="py-3 px-4">認輔人員</th>
                             <th className="py-3 px-4">聯絡方式</th>
                             <th className="py-3 px-4 text-center">操作</th>
@@ -121,9 +131,9 @@ const ExParticipantsManagement = () => {
                     </thead>
                     <tbody className="text-gray-700">
                         {loading ? (
-                            <tr><td colSpan="8" className="py-8 text-center text-gray-400">載入中...</td></tr>
+                            <tr><td colSpan="9" className="py-8 text-center text-gray-400">載入中...</td></tr>
                         ) : filtered.length === 0 ? (
-                            <tr><td colSpan="8" className="py-8 text-center text-gray-400">目前尚無資料</td></tr>
+                            <tr><td colSpan="9" className="py-8 text-center text-gray-400">目前尚無資料</td></tr>
                         ) : filtered.map(r => (
                             <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                                 <td className="py-3 px-4 font-medium">{r.name}</td>
@@ -131,6 +141,7 @@ const ExParticipantsManagement = () => {
                                 <td className="py-3 px-4">{r.birth_date ? toROCDate(r.birth_date) : '-'}</td>
                                 <td className="py-3 px-4">{r.case_number || '-'}</td>
                                 <td className="py-3 px-4">{r.department || '-'}</td>
+                                <td className="py-3 px-4"><span className={`px-2 py-1 rounded-lg text-xs ${STATUS_STYLE[r.status]}`}>{r.status}</span></td>
                                 <td className="py-3 px-4">{r.counselor_name || '-'}</td>
                                 <td className="py-3 px-4">{r.contact_info || '-'}</td>
                                 <td className="py-3 px-4 flex justify-center gap-2">
@@ -164,6 +175,7 @@ const ExParticipantsManagement = () => {
                             </button>
                         </div>
                         <div className="space-y-1 text-sm text-gray-600">
+                            <div><span className="text-gray-400">參與狀態：</span>{r.status}</div>
                             <div><span className="text-gray-400">性別：</span>{r.gender || '-'}</div>
                             <div><span className="text-gray-400">出生日期：</span>{r.birth_date ? toROCDate(r.birth_date) : '-'}</div>
                             <div><span className="text-gray-400">案號／編號：</span>{r.case_number || '-'}</div>
@@ -220,6 +232,14 @@ const ExParticipantsManagement = () => {
                                         {departments.map(d => <option key={d} value={d}>{d}</option>)}
                                     </select>
                                 </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">參與狀態</label>
+                                <select className={`${inputCls} bg-white`} value={form.status}
+                                    onChange={e => setForm({ ...form, status: e.target.value })}>
+                                    <option value="參加中">參加中</option>
+                                    <option value="已結束">已結束</option>
+                                </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">認輔人員（限本專案成員）</label>

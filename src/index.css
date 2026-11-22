@@ -21,3 +21,9 @@
   .print-area { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; border: none !important; }
   .no-print { display: none !important; }
 }
+
+/* 只在列印時出現的區塊（例如考核表匯出）；畫面上不顯示 */
+.print-only { display: none; }
+@media print {
+  .print-only { display: block; }
+}
