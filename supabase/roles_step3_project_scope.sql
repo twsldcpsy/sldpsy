@@ -5,8 +5,9 @@
 --   2. app_session_is_project_manager(key)：系統管理者，或該專案（啟用中）的專案管理者
 --   3. 心理服務人員（心理師）維護：admin_*_psychologist 的門檻由「系統管理者」改為
 --      「心理服務專案的專案管理者或系統管理者」
---   4. 工作人員維護（受限版）：pm_*_officer —— 權限別固定為 general、不可更改，
---      且只能處理權限別為 general 的帳號（不能動審閱者／系統管理者，避免重設密碼後冒用）
+--   4. 工作人員維護（受限版）：pm_*_officer —— 新增的帳號權限別固定為 general，既有帳號的權限別不可更改；
+--      其餘欄位（姓名、股別、身分、聯絡方式、分機、排序）與新增、刪除不分權限別皆可處理；
+--      唯獨「重設密碼」只能處理權限別為 general 的帳號（否則可重設系統管理者密碼後冒用）
 --   5. 公告：新增 created_by；專案管理者只能新增，並只能修改／刪除自己建立的；
 --      系統管理者全部可改；既有公告 created_by 為空，視為系統管理者建立
 --   6. 問卷：新增 created_by；專案管理者只能看到、修改、刪除、檢視結果自己建立的；
@@ -107,9 +108,6 @@ create or replace function pm_update_officer(
 ) returns boolean language plpgsql security definer set search_path = public, extensions as $$
 begin
   if not app_session_is_project_manager('psy_service') then raise exception '無權限'; end if;
-  if not exists (select 1 from probation_officers where id = target_id and role = 'general') then
-    raise exception '只能維護權限別為一般權限的人員';
-  end if;
   update probation_officers set name = o_name, department = o_department,
          contact_info = o_contact_info, extension_number = o_extension_number,
          display_order = o_display_order, staff_type = o_staff_type where id = target_id;
@@ -121,9 +119,6 @@ create or replace function pm_delete_officer(target_id uuid)
 returns boolean language plpgsql security definer set search_path = public, extensions as $$
 begin
   if not app_session_is_project_manager('psy_service') then raise exception '無權限'; end if;
-  if not exists (select 1 from probation_officers where id = target_id and role = 'general') then
-    raise exception '只能維護權限別為一般權限的人員';
-  end if;
   delete from probation_officers where id = target_id;
   return true;
 end;
@@ -135,7 +130,7 @@ declare v_dept text;
 begin
   if not app_session_is_project_manager('psy_service') then raise exception '無權限'; end if;
   if not exists (select 1 from probation_officers where id = target_id and role = 'general') then
-    raise exception '只能維護權限別為一般權限的人員';
+    raise exception '僅系統管理者可重設此權限別帳號的密碼';
   end if;
   update probation_officers set password = app_pw_hash(new_password) where id = target_id
   returning department into v_dept;

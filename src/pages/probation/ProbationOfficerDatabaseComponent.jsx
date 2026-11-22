@@ -10,7 +10,8 @@ const DEFAULT_PASSWORD = '28312321';
 const STAFF_TYPES = ['保護官', '心輔員', '保護性社工', '測試人員'];
 const roleLabel = (r) => (r === 'admin' ? '系統管理者' : r === 'manager' ? '審閱者' : '一般權限');
 
-// limited = true：專案管理者使用的受限版——不能編輯權限別，也只能維護權限別為「一般權限」的人員
+// limited = true：專案管理者使用的受限版——不能編輯權限別（新增的帳號固定為一般權限），
+// 其餘欄位與新增、刪除皆可；重設密碼只限權限別為「一般權限」的帳號
 const ProbationOfficerDatabase = ({ limited = false }) => {
     const [officers, setOfficers] = useState([]);
     const [memberships, setMemberships] = useState([]);
@@ -60,8 +61,8 @@ const ProbationOfficerDatabase = ({ limited = false }) => {
         }
     };
 
-    // 受限版只能操作一般權限的人員
-    const canTouch = (o) => !limited || o.role === 'general';
+    // 受限版只能重設權限別為一般權限的帳號密碼（避免重設系統管理者密碼後冒用）
+    const canResetPassword = !limited || formData.role === 'general';
 
     const projectRolesOf = (officerId) => memberships.filter(m => m.officer_id === officerId);
 
@@ -119,7 +120,7 @@ const ProbationOfficerDatabase = ({ limited = false }) => {
                 if (updateError) throw updateError;
 
                 // Handle Password Reset if provided
-                if (formData.password) {
+                if (formData.password && canResetPassword) {
                     const { error: pwdError } = await supabase
                         .rpc(limited ? 'pm_reset_password_officer' : 'admin_reset_password_officer', {
                             target_id: editingId,
@@ -235,17 +236,15 @@ const ProbationOfficerDatabase = ({ limited = false }) => {
                                     <td className="py-3 px-4 flex justify-center gap-2">
                                         <button
                                             onClick={() => handleOpenEdit(o)}
-                                            disabled={!canTouch(o)}
-                                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-400"
-                                            title={canTouch(o) ? '編輯' : '僅系統管理者可維護此權限別的人員'}
+                                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                                            title="編輯"
                                         >
                                             <Edit className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(o.id)}
-                                            disabled={!canTouch(o)}
-                                            className="p-1 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-400"
-                                            title={canTouch(o) ? '刪除' : '僅系統管理者可維護此權限別的人員'}
+                                            className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                                            title="刪除"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -265,7 +264,7 @@ const ProbationOfficerDatabase = ({ limited = false }) => {
                     <div className="py-8 text-center text-gray-400 bg-white rounded-xl border border-gray-100">目前尚無資料</div>
                 ) : (
                     officers.map((o) => (
-                        <div key={o.id} onClick={() => canTouch(o) && handleOpenEdit(o)} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm active:scale-[0.98] transition-transform">
+                        <div key={o.id} onClick={() => handleOpenEdit(o)} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm active:scale-[0.98] transition-transform">
                             <div className="flex justify-between items-start mb-2">
                                 <div className="min-w-0">
                                     <div className="font-bold text-gray-800 text-lg truncate">{o.name}</div>
@@ -289,16 +288,14 @@ const ProbationOfficerDatabase = ({ limited = false }) => {
                             <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end gap-2">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleOpenEdit(o); }}
-                                    disabled={!canTouch(o)}
-                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                     title="編輯"
                                 >
                                     <Edit className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleDelete(o.id); }}
-                                    disabled={!canTouch(o)}
-                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                     title="刪除"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -391,12 +388,16 @@ const ProbationOfficerDatabase = ({ limited = false }) => {
                                 <input
                                     type="text"
                                     required={!isEditing}
+                                    disabled={isEditing && !canResetPassword}
                                     className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none font-mono"
                                     value={formData.password}
                                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                                     placeholder={isEditing ? '輸入新密碼以重設' : ''}
                                 />
-                            {isEditing && (
+                            {isEditing && !canResetPassword && (
+                                <p className="text-xs text-gray-400 mt-1">僅系統管理者可重設此權限別帳號的密碼</p>
+                            )}
+                            {isEditing && canResetPassword && (
                                 <button
                                     type="button"
                                     onClick={() => handleResetToDefault({ id: editingId, name: formData.name })}
