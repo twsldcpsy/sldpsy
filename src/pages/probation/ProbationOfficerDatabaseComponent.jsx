@@ -209,13 +209,6 @@ const ProbationOfficerDatabase = () => {
                                             <Edit className="w-4 h-4" />
                                         </button>
                                         <button
-                                            onClick={() => handleResetToDefault(o)}
-                                            className="p-1 text-gray-400 hover:text-amber-600 transition-colors"
-                                            title="重設為預設密碼"
-                                        >
-                                            <KeyRound className="w-4 h-4" />
-                                        </button>
-                                        <button
                                             onClick={() => handleDelete(o.id)}
                                             className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                                             title="刪除"
@@ -263,13 +256,6 @@ const ProbationOfficerDatabase = () => {
                                     title="編輯"
                                 >
                                     <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleResetToDefault(o); }}
-                                    className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                                    title="重設為預設密碼"
-                                >
-                                    <KeyRound className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleDelete(o.id); }}
@@ -357,6 +343,15 @@ const ProbationOfficerDatabase = () => {
                                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                                     placeholder={isEditing ? '輸入新密碼以重設' : ''}
                                 />
+                            {isEditing && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleResetToDefault({ id: editingId, name: formData.name })}
+                                    className="mt-2 inline-flex items-center gap-1 text-sm text-amber-700 hover:text-amber-800 hover:underline"
+                                >
+                                    <KeyRound className="w-4 h-4" /> 一鍵重設為預設密碼（{DEFAULT_PASSWORD}）
+                                </button>
+                            )}
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
