@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Users, AlertCircle } from 'lucide-react';
 import Button from '../../components/Button';
-import { supabase } from '../../supabase';
+import { supabase, setSessionToken } from '../../supabase';
 
 const ProbationLogin = () => {
     const navigate = useNavigate();
@@ -16,22 +16,12 @@ const ProbationLogin = () => {
     useEffect(() => {
         const fetchDepartments = async () => {
             try {
-                // Use the same RPC as the database view to ensure consistent sorting
-                const { data, error } = await supabase
-                    .rpc('get_admin_view_officers');
+                // 登入前只取得股別清單（已依排序），不含任何個資
+                const { data, error } = await supabase.rpc('get_login_departments');
 
                 if (error) throw error;
 
-                // Extract unique departments, maintaining the order from the RPC result
-                // RPC likely returns flat object with 'department' or 'departments' json? 
-                // Previous code assumed 'department' column. officer component uses 'officer.department || officer.departments?.name'.
-                // Let's check RPC return in officer component: `const { data } = await supabase.rpc('get_admin_view_officers'); setOfficers(data);`
-                // And render uses `officer.department || (officer.departments && officer.departments.name)`.
-                // Let's safe guard map:
-                const deptList = data
-                    .map(o => o.department || (typeof o.departments === 'object' ? o.departments?.name : o.departments))
-                    .filter(d => d); // remove null/empty
-                const uniqueDeptsClean = [...new Set(deptList)];
+                const uniqueDeptsClean = [...new Set((data || []).map(o => o.department).filter(d => d))];
 
                 setDepartmentOptions(uniqueDeptsClean);
 
@@ -56,29 +46,29 @@ const ProbationLogin = () => {
         }
 
         try {
-            // Secure Login via RPC
+            // Secure Login via RPC：成功時回傳 session token
             const { data, error } = await supabase
-                .rpc('verify_probation_login', {
-                    input_department: selectedDept,
-                    input_password: password
+                .rpc('login_officer', {
+                    p_department: selectedDept,
+                    p_password: password
                 });
 
             if (error) throw error;
 
-            if (!data || data.length === 0) {
+            if (!data || !data.token) {
                 setError('密碼錯誤，或該股別無此密碼使用者');
                 return;
             }
 
-            const officer = data[0]; // RPC returns a table/array
+            setSessionToken(data.token);
 
             // Success
             navigate('/probation/dashboard', {
                 state: {
-                    departmentName: officer.department,
-                    officerId: officer.id,
-                    officerName: officer.name,
-                    role: officer.role
+                    departmentName: data.department,
+                    officerId: data.id,
+                    officerName: data.name,
+                    role: data.role
                 }
             });
 

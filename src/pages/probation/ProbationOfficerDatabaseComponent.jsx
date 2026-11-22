@@ -180,7 +180,7 @@ const ProbationOfficerDatabase = () => {
                                             {o.role === 'admin' ? '系統管理員' : o.role === 'manager' ? '管理員' : '一般權限'}
                                         </span>
                                     </td>
-                                    <td className="py-3 px-4 font-mono text-sm">{o.password}</td>
+                                    <td className="py-3 px-4 font-mono text-sm"><span className="text-gray-400">已加密</span></td>
                                     <td className="py-3 px-4">{o.contact_info || '-'}</td>
                                     <td className="py-3 px-4">{o.extension_number || '-'}</td>
                                     <td className="py-3 px-4 flex justify-center gap-2">
@@ -229,7 +229,7 @@ const ProbationOfficerDatabase = () => {
                             <div className="space-y-1 text-sm text-gray-600">
                                 <div><span className="text-gray-400">聯繫方式：</span>{o.contact_info || '-'}</div>
                                 <div><span className="text-gray-400">分機號碼：</span>{o.extension_number || '-'}</div>
-                                <div><span className="text-gray-400">登入密碼：</span><span className="font-mono">{o.password}</span></div>
+                                <div><span className="text-gray-400">登入密碼：</span><span className="font-mono"><span className="text-gray-400">已加密</span></span></div>
                                 <div><span className="text-gray-400">排序：</span><span className="font-mono">{o.display_order ?? 0}</span></div>
                             </div>
                             <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end gap-2">

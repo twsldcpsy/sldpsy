@@ -45,7 +45,7 @@ const PsychologistDatabase = () => {
         setFormData({
             name: '',
             qualification: '諮商心理師',
-            password: 'password123', // Default for new users
+            password: 'psy', // Default for new users
             contact_info: '',
             is_active: true
         });
@@ -96,7 +96,7 @@ const PsychologistDatabase = () => {
                     .rpc('admin_create_psychologist', {
                         p_name: formData.name,
                         p_qualification: formData.qualification || '諮商心理師',
-                        p_password: formData.password || 'password123',
+                        p_password: formData.password || 'psy',
                         p_contact_info: formData.contact_info || null,
                         p_is_active: formData.is_active
                     });
@@ -162,7 +162,7 @@ const PsychologistDatabase = () => {
                                             {p.qualification || '未設定'}
                                         </span>
                                     </td>
-                                    <td className="py-3 px-4 font-mono text-sm">{p.password}</td>
+                                    <td className="py-3 px-4 font-mono text-sm"><span className="text-gray-400">已加密</span></td>
                                     <td className="py-3 px-4">{p.contact_info || '-'}</td>
                                     <td className="py-3 px-4">
                                         <span className={`px-2 py-1 rounded-full text-xs ${p.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
@@ -214,7 +214,7 @@ const PsychologistDatabase = () => {
                             </div>
                             <div className="space-y-1 text-sm text-gray-600">
                                 <div><span className="text-gray-400">聯繫方式：</span>{p.contact_info || '-'}</div>
-                                <div><span className="text-gray-400">登入密碼：</span><span className="font-mono">{p.password}</span></div>
+                                <div><span className="text-gray-400">登入密碼：</span><span className="font-mono"><span className="text-gray-400">已加密</span></span></div>
                             </div>
                             <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end gap-2">
                                 <button

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, AlertCircle } from 'lucide-react';
 import Button from '../../components/Button';
-import { supabase } from '../../supabase';
+import { supabase, setSessionToken } from '../../supabase';
 
 const PsychologistLogin = () => {
     const navigate = useNavigate();
@@ -15,10 +15,7 @@ const PsychologistLogin = () => {
     useEffect(() => {
         const fetchPsychologists = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('psychologists')
-                    .select('id, name')
-                    .eq('is_active', true);
+                const { data, error } = await supabase.rpc('get_login_psychologists');
 
                 if (error) throw error;
                 setPsychologists(data);
@@ -48,26 +45,21 @@ const PsychologistLogin = () => {
         }
 
         try {
-            // Secure Login via RPC
+            // Secure Login via RPC：成功時回傳 session token
             const { data, error } = await supabase
-                .rpc('verify_psychologist_login', {
-                    input_id: selectedName,
-                    input_password: password
+                .rpc('login_psychologist', {
+                    p_id: selectedName,
+                    p_password: password
                 });
 
             if (error) throw error;
 
-            if (data === true) {
-                // Fetch details after successful verification (the RPC only returns boolean)
-                // We already have the name from the dropdown selection, but let's be safe.
-                // Actually, we selected 'selectedName' which is the ID. 
-                // We can find the name from the 'psychologists' state array.
-                const psych = psychologists.find(p => p.id === selectedName);
-
+            if (data && data.token) {
+                setSessionToken(data.token);
                 navigate('/psychologist/dashboard', {
                     state: {
-                        psychologistId: selectedName,
-                        psychologistName: psych?.name
+                        psychologistId: data.id,
+                        psychologistName: data.name
                     }
                 });
             } else {
