@@ -11,11 +11,21 @@ const ProjectPermissionTab = ({ projects, isSystemAdmin, officerId }) => {
     const list = projects || [];
 
     // 心理服務專案頁面：專案管理者與系統管理者可進入
-    const openProject = list.find(p => p.id === openId && p.key === 'psy_service');
-    if (openProject) {
-        return <PsyServiceProject project={openProject} officerId={officerId} isSystemAdmin={isSystemAdmin} onBack={() => setOpenId(null)} />;
-    }
     const canEnter = (p) => p.key === 'psy_service' && p.is_active && (isSystemAdmin || p.my_role === 'manager');
+
+    // 只有一個專案、且可進入時，直接進入該專案，不需選擇（此時沒有「回到專案列表」）
+    const onlyProject = list.length === 1 && canEnter(list[0]) ? list[0] : null;
+    const openProject = onlyProject || list.find(p => p.id === openId && canEnter(p));
+    if (openProject) {
+        return (
+            <PsyServiceProject
+                project={openProject}
+                officerId={officerId}
+                isSystemAdmin={isSystemAdmin}
+                onBack={onlyProject ? null : () => setOpenId(null)}
+            />
+        );
+    }
 
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">

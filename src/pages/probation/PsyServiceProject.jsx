@@ -29,9 +29,11 @@ const PsyServiceProject = ({ project, officerId, isSystemAdmin, onBack }) => {
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
             <div className="flex items-center gap-3 mb-6">
-                <button onClick={onBack} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100" title="回到專案列表">
-                    <ArrowLeft className="w-5 h-5" />
-                </button>
+                {onBack && (
+                    <button onClick={onBack} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100" title="回到專案列表">
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                )}
                 <Users className="w-5 h-5 text-primary" />
                 <h3 className="text-xl font-bold text-primary">{project.name}</h3>
             </div>
