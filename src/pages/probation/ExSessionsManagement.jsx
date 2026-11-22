@@ -128,20 +128,40 @@ const ExSessionsManagement = ({ isManager, officerId }) => {
         setShowModal(true);
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    // 儲存目前表單；回傳活動編號（失敗回傳 null）
+    const saveSession = async () => {
         try {
             const payload = {
                 ...form, id: editingId,
                 youths: form.youths.map(y => ({ id: y.id, attendance: y.attendance, review_status: y.review_status, filler_id: y.filler_id || null }))
             };
-            const { error } = await supabase.rpc('ex_session_save', { p_data: payload });
+            const { data, error } = await supabase.rpc('ex_session_save', { p_data: payload });
             if (error) throw error;
-            setShowModal(false);
-            fetchRows();
+            return data;
         } catch (error) {
             alert((editingId ? '更新失敗: ' : '新增失敗: ') + error.message);
+            return null;
         }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const id = await saveSession();
+        if (!id) return;
+        setShowModal(false);
+        fetchRows();
+    };
+
+    // 開啟考核表：活動還沒儲存時，先自動儲存活動再開啟（不需要先手動儲存）
+    const openFill = async (y) => {
+        let sid = editingId;
+        if (!sid) {
+            sid = await saveSession();
+            if (!sid) return;
+            setEditingId(sid);
+            await fetchRows();
+        }
+        setFillTarget({ sessionId: sid, participantId: y.id });
     };
 
     const handleDelete = async (r) => {
@@ -385,7 +405,7 @@ const ExSessionsManagement = ({ isManager, officerId }) => {
                             <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-3">
                                 <div className="flex flex-wrap justify-between items-center gap-2">
                                     <h4 className="font-bold text-primary">出席少年與考核表</h4>
-                                    <span className="text-xs text-gray-400">預設帶入「目前參加中」的少年；填寫人員只能從上方「實際出席人員」選；填寫、列印前請先按「儲存」</span>
+                                    <span className="text-xs text-gray-400">預設帶入「目前參加中」的少年；填寫人員只能從上方「實際出席人員」選；活動尚未儲存時，按「填寫」會先自動儲存</span>
                                 </div>
                                 {form.youths.length === 0 ? (
                                     <div className="text-sm text-gray-400 py-3">目前沒有參加中的少年，可用下方選單加入。</div>
@@ -405,8 +425,11 @@ const ExSessionsManagement = ({ isManager, officerId }) => {
                                             <tbody>
                                                 {form.youths.map(y => {
                                                     const saved = !!editingId;
-                                                    // 已核章後只能檢視
-                                                    const canFill = saved && y.review_status !== '已核章' && (isManager || (y.filler_id && y.filler_id === officerId));
+                                                    // 專案管理者或被分配的填寫人可填寫；已核章後只能檢視
+                                                    const mayFill = isManager || (y.filler_id && y.filler_id === officerId);
+                                                    const canFill = y.review_status !== '已核章' && mayFill;
+                                                    // 已儲存的活動，檢視隨時可開；尚未儲存時，有填寫權限才能開（會自動先儲存）
+                                                    const fillDisabled = !saved && !mayFill;
                                                     return (
                                                         <tr key={y.id} className="border-b border-gray-100">
                                                             <td className="py-2 pr-2 font-medium">{y.name}</td>
@@ -431,8 +454,8 @@ const ExSessionsManagement = ({ isManager, officerId }) => {
                                                             </td>
                                                             <td className="py-2 pr-2">
                                                                 <div className="flex justify-center gap-2">
-                                                                    <button type="button" disabled={!canFill && !(saved && y.has_form)} onClick={() => setFillTarget({ sessionId: editingId, participantId: y.id })}
-                                                                        title={!saved ? '請先儲存活動' : (canFill ? '填寫考核表' : (y.has_form ? '檢視考核表' : '只有被分配的填寫人員或專案管理者可填寫'))}
+                                                                    <button type="button" disabled={fillDisabled} onClick={() => openFill(y)}
+                                                                        title={fillDisabled ? '請先指派自己為填寫人員，或由專案管理者操作' : (canFill ? (saved ? '填寫考核表' : '填寫考核表（會先自動儲存活動）') : '檢視考核表')}
                                                                         className="px-2 py-1 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-white disabled:opacity-40 flex items-center gap-1 whitespace-nowrap">
                                                                         <FileText className="w-3.5 h-3.5" /> {canFill ? '填寫' : '檢視'}
                                                                     </button>

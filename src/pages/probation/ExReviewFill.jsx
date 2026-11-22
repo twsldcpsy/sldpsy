@@ -112,6 +112,9 @@ const ExReviewFill = ({ sessionId, participantId, onClose, onSaved }) => {
                                 {payload.review_status === '已核章' ? '此考核表已核章，不可修改（需先將考核狀態改回）。' : '只有被分配的填寫人員或專案管理者可以填寫，您目前為唯讀。'}
                             </p>
                         )}
+                        {!canFill && !payload.data && payload.review_status !== '已核章' && (
+                            <p className="text-xs text-gray-400 mb-3">此少年目前尚未填寫考核表。</p>
+                        )}
                         <div className="space-y-4">
                             {fields.length === 0 ? <div className="text-gray-400 text-sm">此考核表尚無欄位</div> : fields.map(renderField)}
                         </div>
