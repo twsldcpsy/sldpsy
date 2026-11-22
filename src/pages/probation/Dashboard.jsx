@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { User, FileText, Database, Settings, Search, Plus, X, Save, ClipboardList, FolderKanban } from 'lucide-react';
 import Button from '../../components/Button';
@@ -12,6 +12,9 @@ import OfficerProfileComponent from './OfficerProfileComponent';
 import BulletinBoardManagement from './BulletinBoardManagement';
 import SurveyManagement from './SurveyManagement';
 import ProjectManagement from './ProjectManagement';
+import ProjectPermissionTab from './ProjectPermissionTab';
+import { PROJECT_ROLE_LABEL } from '../../utils/projectUtils';
+import { supabase } from '../../supabase';
 import AdvancedStats from './AdvancedStats';
 import WriteOffStats from './WriteOffStats';
 import ManagerStats from './ManagerStats';
@@ -155,12 +158,35 @@ const Dashboard = () => {
     const isSystemAdmin = role === 'admin';
     const isManager = role === 'manager' || role === 'admin';
 
+    // 專案身分：自己在各專案的角色（系統管理者會拿到全部專案，只取自己有角色的顯示於標籤）
+    const [projects, setProjects] = useState([]);
+    useEffect(() => {
+        const load = async () => {
+            const { data, error } = await supabase.rpc('project_list');
+            if (error) {
+                console.error('Error fetching projects:', error);
+                return;
+            }
+            setProjects(data || []);
+        };
+        load();
+    }, [officerId]);
+    const myProjects = projects.filter(p => p.my_role);
+    // 專案成員、專案管理者可進入「專案權限」；系統管理者可看到全部頁面
+    const showProjectTab = isSystemAdmin || myProjects.length > 0;
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center px-2">
                 <div>
                     <h1 className="text-3xl font-bold text-primary">保護官儀表板</h1>
-                    <p className="text-gray-500 mt-1">目前身分: {departmentName} <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full ml-2">{role === 'admin' ? '系統管理者' : role === 'manager' ? '審閱者' : '一般權限'}</span></p>
+                    <p className="text-gray-500 mt-1">目前身分: {departmentName} <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full ml-2">{role === 'admin' ? '系統管理者' : role === 'manager' ? '審閱者' : '一般權限'}</span>
+                        {myProjects.map(p => (
+                            <span key={p.id} className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full ml-2">
+                                {p.name}：{PROJECT_ROLE_LABEL[p.my_role]}
+                            </span>
+                        ))}
+                    </p>
                 </div>
             </div>
 
@@ -187,6 +213,16 @@ const Dashboard = () => {
                     </button>
                 )}
 
+                {/* Project Tab - Available to project members, project managers and Admin */}
+                {showProjectTab && (
+                    <button
+                        className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'project' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setActiveTab('project')}
+                    >
+                        <FolderKanban className="w-4 h-4" /> 專案權限
+                    </button>
+                )}
+
                 {/* Admin Tab - Available only to Admin */}
                 {isSystemAdmin && (
                     <button
@@ -202,6 +238,7 @@ const Dashboard = () => {
             <div className="mt-6">
                 {activeTab === 'cases' && <GeneralTab isAdmin={isSystemAdmin} departmentName={departmentName} officerId={officerId} />}
                 {activeTab === 'stats' && isManager && <DepartmentStats isAdmin={isSystemAdmin} />}
+                {activeTab === 'project' && showProjectTab && <ProjectPermissionTab projects={projects} isSystemAdmin={isSystemAdmin} />}
                 {activeTab === 'admin' && isSystemAdmin && <Maintenance adminId={officerId} />}
             </div>
         </div>

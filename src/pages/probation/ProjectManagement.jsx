@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import Button from '../../components/Button';
 import { Plus, X, Edit, Users, Trash2 } from 'lucide-react';
+import { PROJECT_ROLE_LABEL } from '../../utils/projectUtils';
 
-const ROLE_LABEL = { manager: '專案管理者', member: '專案成員' };
+const ROLE_LABEL = PROJECT_ROLE_LABEL;
 const inputCls = 'w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none';
 
 // 系統管理者專用：專案清單、新增／編輯／停用，以及專案成員（專案管理者、專案成員）指派

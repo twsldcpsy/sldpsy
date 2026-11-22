@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import Button from '../../components/Button';
 import { Plus, X, Trash2, Edit, KeyRound } from 'lucide-react';
+import { PROJECT_ROLE_LABEL } from '../../utils/projectUtils';
 
 // 新增帳號與「重設為預設密碼」共用的預設值
 const DEFAULT_PASSWORD = '28312321';
@@ -11,6 +12,7 @@ const roleLabel = (r) => (r === 'admin' ? '系統管理者' : r === 'manager' ? 
 
 const ProbationOfficerDatabase = () => {
     const [officers, setOfficers] = useState([]);
+    const [memberships, setMemberships] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -42,12 +44,19 @@ const ProbationOfficerDatabase = () => {
             if (error) throw error;
             setOfficers(data);
 
+            // 專案身分（各專案的角色）；取不到時只是不顯示，不影響人員列表
+            const { data: mData, error: mError } = await supabase.rpc('project_memberships_all');
+            if (mError) console.error('Error fetching memberships:', mError);
+            setMemberships(mData || []);
+
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
             setLoading(false);
         }
     };
+
+    const projectRolesOf = (officerId) => memberships.filter(m => m.officer_id === officerId);
 
     const handleOpenAdd = () => {
         setIsEditing(false);
@@ -182,6 +191,7 @@ const ProbationOfficerDatabase = () => {
                             <th className="py-3 px-4">姓名</th>
                             <th className="py-3 px-4">身分</th>
                             <th className="py-3 px-4">權限別</th>
+                            <th className="py-3 px-4">專案身分</th>
                             <th className="py-3 px-4">聯繫方式</th>
                             <th className="py-3 px-4">分機號碼</th>
                             <th className="py-3 px-4 text-center">操作</th>
@@ -189,9 +199,9 @@ const ProbationOfficerDatabase = () => {
                     </thead>
                     <tbody className="text-gray-700">
                         {loading ? (
-                            <tr><td colSpan="8" className="py-8 text-center text-gray-400">載入中...</td></tr>
+                            <tr><td colSpan="9" className="py-8 text-center text-gray-400">載入中...</td></tr>
                         ) : officers.length === 0 ? (
-                            <tr><td colSpan="8" className="py-8 text-center text-gray-400">目前尚無資料</td></tr>
+                            <tr><td colSpan="9" className="py-8 text-center text-gray-400">目前尚無資料</td></tr>
                         ) : (
                             officers.map((o) => (
                                 <tr key={o.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
@@ -205,6 +215,11 @@ const ProbationOfficerDatabase = () => {
                                                 o.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
                                             {roleLabel(o.role)}
                                         </span>
+                                    </td>
+                                    <td className="py-3 px-4 text-sm">
+                                        {projectRolesOf(o.id).length === 0 ? <span className="text-gray-300">-</span> : projectRolesOf(o.id).map(m => (
+                                            <div key={m.project_id}>{m.project_name}：{PROJECT_ROLE_LABEL[m.project_role]}</div>
+                                        ))}
                                     </td>
                                     <td className="py-3 px-4">{o.contact_info || '-'}</td>
                                     <td className="py-3 px-4">{o.extension_number || '-'}</td>
@@ -255,6 +270,9 @@ const ProbationOfficerDatabase = () => {
                                 <div><span className="text-gray-400">聯繫方式：</span>{o.contact_info || '-'}</div>
                                 <div><span className="text-gray-400">分機號碼：</span>{o.extension_number || '-'}</div>
                                 <div><span className="text-gray-400">身分：</span>{o.staff_type || '保護官'}</div>
+                                {projectRolesOf(o.id).length > 0 && (
+                                    <div><span className="text-gray-400">專案身分：</span>{projectRolesOf(o.id).map(m => `${m.project_name}：${PROJECT_ROLE_LABEL[m.project_role]}`).join('、')}</div>
+                                )}
                                 <div><span className="text-gray-400">排序：</span><span className="font-mono">{o.display_order ?? 0}</span></div>
                             </div>
                             <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end gap-2">

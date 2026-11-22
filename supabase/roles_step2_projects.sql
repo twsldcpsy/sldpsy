@@ -131,9 +131,25 @@ begin
 end;
 $$;
 
+-- 全部成員指派（僅系統管理者）：工作人員資料庫列表顯示「專案身分」用
+create or replace function project_memberships_all() returns jsonb
+language plpgsql stable security definer set search_path = public, extensions as $$
+begin
+  if not app_session_is_admin() then raise exception '無權限'; end if;
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+             'officer_id', m.officer_id, 'project_id', p.id,
+             'project_name', p.name, 'project_role', m.project_role)
+           order by p.created_at)
+      from project_members m join projects p on p.id = m.project_id
+  ), '[]'::jsonb);
+end;
+$$;
+
 grant execute on function project_list() to anon, authenticated;
 grant execute on function project_create(text, text) to anon, authenticated;
 grant execute on function project_update(uuid, text, text, boolean) to anon, authenticated;
 grant execute on function project_members_list(uuid) to anon, authenticated;
 grant execute on function project_member_set(uuid, uuid, text) to anon, authenticated;
 grant execute on function project_member_remove(uuid, uuid) to anon, authenticated;
+grant execute on function project_memberships_all() to anon, authenticated;
