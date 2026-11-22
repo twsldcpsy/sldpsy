@@ -4,7 +4,7 @@ import Button from '../../components/Button';
 import MultiSelectFilter from '../../components/MultiSelectFilter';
 import ExReviewFill from './ExReviewFill';
 import ExReviewPrint from './ExReviewPrint';
-import { Plus, X, Edit, Trash2, Copy, FileText, Printer } from 'lucide-react';
+import { Plus, X, Edit, Trash2, FileText, Printer } from 'lucide-react';
 import { toROCDate, getCurrentROCYear } from '../../utils/dateUtils';
 
 const inputCls = 'w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none';
@@ -32,6 +32,21 @@ const names = (list) => (list && list.length > 0 ? list.map(x => x.name).join('�
 const defaultYouths = (participants) => participants
     .filter(p => p.status === '參加中')
     .map(p => ({ id: p.id, name: p.name, attendance: '出席', review_status: '待填寫', filler_id: '', has_form: false }));
+
+// 區塊標題（編輯視窗用）
+const Group = ({ title, hint, children }) => (
+    <div className="p-4 rounded-xl border border-gray-100 bg-gray-50/60 space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h4 className="font-bold text-primary">{title}</h4>
+            {hint && <span className="text-xs text-gray-400">{hint}</span>}
+        </div>
+        {children}
+    </div>
+);
+
+const Chip = ({ className, children }) => (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${className}`}>{children}</span>
+);
 
 const summary = (youths) => {
     const list = youths || [];
@@ -115,15 +130,6 @@ const ExSessionsManagement = ({ isManager, officerId }) => {
         await fetchParticipants();
         setEditingId(r.id);
         setForm(toForm(r));
-        setAddYouthId('');
-        setShowModal(true);
-    };
-
-    // 複製：帶入同一筆的內容，場次加一；日期、實際出席人員清空，少年名單重新帶入目前參加中的少年
-    const openCopy = async (r) => {
-        const ps = await fetchParticipants();
-        setEditingId(null);
-        setForm({ ...toForm(r), session_no: Number(r.session_no) + 1, session_date: '', status: '規劃中', staff_ids: [], youths: defaultYouths(ps) });
         setAddYouthId('');
         setShowModal(true);
     };
@@ -221,16 +227,47 @@ const ExSessionsManagement = ({ isManager, officerId }) => {
     const inListIds = new Set(form.youths.map(y => y.id));
     const addableYouths = participants.filter(p => !inListIds.has(p.id));
 
-    const renderSummary = (r) => {
+
+    // 出席與考核統計（列表用）
+    const renderYouths = (r) => {
         const s = summary(r.youths);
-        if (s.total === 0) return '-';
+        if (s.total === 0) return <span className="text-gray-300">未帶入少年</span>;
+        const pct = (n) => `${(n / s.total) * 100}%`;
         return (
-            <div className="text-xs leading-5">
-                <div>出席 {s.present}／缺席 {s.absent}／請假 {s.leave}</div>
-                <div className="text-gray-400">考核：已核章 {s.stamped}／已填寫 {s.filled}／待填寫 {s.pending}</div>
+            <div className="space-y-2 min-w-[190px]">
+                <div className="flex flex-wrap gap-1.5">
+                    <Chip className="bg-green-50 text-green-700">出席 {s.present}</Chip>
+                    <Chip className="bg-red-50 text-red-600">缺席 {s.absent}</Chip>
+                    <Chip className="bg-amber-50 text-amber-700">請假 {s.leave}</Chip>
+                </div>
+                <div>
+                    <div className="flex h-1.5 rounded-full overflow-hidden bg-gray-100" title={`已核章 ${s.stamped}／已填寫 ${s.filled}／待填寫 ${s.pending}`}>
+                        <div className="bg-green-500" style={{ width: pct(s.stamped) }} />
+                        <div className="bg-blue-400" style={{ width: pct(s.filled) }} />
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 text-xs text-gray-500 mt-1">
+                        <span>已核章 {s.stamped}</span>
+                        <span>已填寫 {s.filled}</span>
+                        <span>待填寫 {s.pending}</span>
+                    </div>
+                </div>
             </div>
         );
     };
+
+    const renderStaff = (r) => (
+        <div className="space-y-1 text-sm min-w-[150px]">
+            <div><span className="text-xs text-gray-400 mr-1">輪值</span>{names(r.duty)}</div>
+            <div><span className="text-xs text-gray-400 mr-1">出席</span>{names(r.attended_staff)}</div>
+        </div>
+    );
+
+    const renderPlace = (r) => (
+        <div className="space-y-1 text-sm min-w-[130px]">
+            <div className="font-medium text-gray-800">{r.venue || <span className="text-gray-300">未填場地</span>}</div>
+            <div className="text-gray-500">{r.contact || <span className="text-gray-300">未填聯繫窗口</span>}</div>
+        </div>
+    );
 
     return (
         <div>
@@ -252,51 +289,45 @@ const ExSessionsManagement = ({ isManager, officerId }) => {
                 </select>
             </div>
 
-            <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left border-collapse text-sm">
+            {/* 桌機：7 欄，每欄上下兩行呈現，減少橫向捲動 */}
+            <div className="hidden md:block overflow-x-auto bg-white rounded-xl border border-gray-100">
+                <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="bg-gray-50 border-b border-gray-100 text-gray-600">
-                            <th className="py-3 px-3">年度</th>
-                            <th className="py-3 px-3">場次</th>
-                            <th className="py-3 px-3">日期</th>
-                            <th className="py-3 px-3">課程主題</th>
-                            <th className="py-3 px-3">運動項目</th>
-                            <th className="py-3 px-3">講師</th>
-                            <th className="py-3 px-3">場地</th>
-                            <th className="py-3 px-3">聯繫窗口</th>
-                            <th className="py-3 px-3">輪值人員</th>
-                            <th className="py-3 px-3">實際出席人員</th>
-                            <th className="py-3 px-3">出席少年</th>
-                            <th className="py-3 px-3">狀態</th>
-                            <th className="py-3 px-3 text-center">操作</th>
+                        <tr className="bg-gray-50 border-b border-gray-100 text-gray-500 text-xs">
+                            <th className="py-3 px-4 font-medium">場次</th>
+                            <th className="py-3 px-4 font-medium">課程</th>
+                            <th className="py-3 px-4 font-medium">場地／聯繫窗口</th>
+                            <th className="py-3 px-4 font-medium">輪值／實際出席人員</th>
+                            <th className="py-3 px-4 font-medium">出席少年與考核</th>
+                            <th className="py-3 px-4 font-medium">狀態</th>
+                            <th className="py-3 px-4 font-medium text-center">操作</th>
                         </tr>
                     </thead>
                     <tbody className="text-gray-700">
                         {loading ? (
-                            <tr><td colSpan="13" className="py-8 text-center text-gray-400">載入中...</td></tr>
+                            <tr><td colSpan="7" className="py-10 text-center text-gray-400">載入中...</td></tr>
                         ) : filtered.length === 0 ? (
-                            <tr><td colSpan="13" className="py-8 text-center text-gray-400">目前尚無資料</td></tr>
+                            <tr><td colSpan="7" className="py-10 text-center text-gray-400">目前尚無資料</td></tr>
                         ) : filtered.map(r => (
-                            <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors align-top">
-                                <td className="py-3 px-3">{r.year}</td>
-                                <td className="py-3 px-3">{r.session_no}</td>
-                                <td className="py-3 px-3 whitespace-nowrap">{r.session_date ? toROCDate(r.session_date) : '-'}</td>
-                                <td className="py-3 px-3 font-medium">{r.topic || '-'}</td>
-                                <td className="py-3 px-3">{r.sport || '-'}</td>
-                                <td className="py-3 px-3">{r.lecturer || '-'}</td>
-                                <td className="py-3 px-3">{r.venue || '-'}</td>
-                                <td className="py-3 px-3">{r.contact || '-'}</td>
-                                <td className="py-3 px-3">{names(r.duty)}</td>
-                                <td className="py-3 px-3">{names(r.attended_staff)}</td>
-                                <td className="py-3 px-3">{renderSummary(r)}</td>
-                                <td className="py-3 px-3">
-                                    <span className={`px-2 py-1 rounded-lg text-xs whitespace-nowrap ${STATUS_STYLE[r.status]}`}>{r.status}</span>
+                            <tr key={r.id} className="border-b border-gray-50 last:border-b-0 hover:bg-gray-50/60 transition-colors align-top">
+                                <td className="py-4 px-4 whitespace-nowrap">
+                                    <div className="font-bold text-gray-800">{r.year} 年度 第 {r.session_no} 場</div>
+                                    <div className="text-sm text-gray-500 mt-1">{r.session_date ? toROCDate(r.session_date) : <span className="text-gray-300">日期未定</span>}</div>
                                 </td>
-                                <td className="py-3 px-3">
-                                    <div className="flex justify-center gap-2">
-                                        <button onClick={() => openCopy(r)} className="p-1 text-gray-400 hover:text-green-600 transition-colors" title="複製（建立下一場）"><Copy className="w-4 h-4" /></button>
-                                        <button onClick={() => openEdit(r)} className="p-1 text-gray-400 hover:text-blue-600 transition-colors" title="編輯"><Edit className="w-4 h-4" /></button>
-                                        <button onClick={() => handleDelete(r)} className="p-1 text-gray-400 hover:text-red-600 transition-colors" title="刪除"><Trash2 className="w-4 h-4" /></button>
+                                <td className="py-4 px-4">
+                                    <div className="font-medium text-gray-800">{r.topic || <span className="text-gray-300">未填主題</span>}</div>
+                                    <div className="text-sm text-gray-500 mt-1">{[r.sport, r.lecturer && `講師 ${r.lecturer}`].filter(Boolean).join(' · ') || <span className="text-gray-300">-</span>}</div>
+                                </td>
+                                <td className="py-4 px-4">{renderPlace(r)}</td>
+                                <td className="py-4 px-4">{renderStaff(r)}</td>
+                                <td className="py-4 px-4">{renderYouths(r)}</td>
+                                <td className="py-4 px-4">
+                                    <span className={`px-2.5 py-1 rounded-lg text-xs whitespace-nowrap ${STATUS_STYLE[r.status]}`}>{r.status}</span>
+                                </td>
+                                <td className="py-4 px-4">
+                                    <div className="flex justify-center gap-1">
+                                        <button onClick={() => openEdit(r)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="編輯"><Edit className="w-4 h-4" /></button>
+                                        <button onClick={() => handleDelete(r)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="刪除"><Trash2 className="w-4 h-4" /></button>
                                     </div>
                                 </td>
                             </tr>
@@ -305,32 +336,29 @@ const ExSessionsManagement = ({ isManager, officerId }) => {
                 </table>
             </div>
 
+            {/* 手機：卡片 */}
             <div className="md:hidden space-y-3">
                 {loading ? (
                     <div className="py-8 text-center text-gray-400 bg-white rounded-xl border border-gray-100">載入中...</div>
                 ) : filtered.length === 0 ? (
                     <div className="py-8 text-center text-gray-400 bg-white rounded-xl border border-gray-100">目前尚無資料</div>
                 ) : filtered.map(r => (
-                    <div key={r.id} onClick={() => openEdit(r)} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
+                    <div key={r.id} onClick={() => openEdit(r)} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
+                        <div className="flex justify-between items-start">
                             <div>
                                 <div className="font-bold text-gray-800">{r.year} 年度 第 {r.session_no} 場</div>
-                                <div className="text-sm text-primary">{r.topic || '（未填主題）'}</div>
+                                <div className="text-xs text-gray-500 mt-0.5">{r.session_date ? toROCDate(r.session_date) : '日期未定'}</div>
                             </div>
-                            <span className={`px-2 py-1 rounded-lg text-xs ${STATUS_STYLE[r.status]}`}>{r.status}</span>
+                            <span className={`px-2.5 py-1 rounded-lg text-xs ${STATUS_STYLE[r.status]}`}>{r.status}</span>
                         </div>
-                        <div className="space-y-1 text-sm text-gray-600">
-                            <div><span className="text-gray-400">日期：</span>{r.session_date ? toROCDate(r.session_date) : '-'}</div>
-                            <div><span className="text-gray-400">運動項目：</span>{r.sport || '-'}</div>
-                            <div><span className="text-gray-400">講師：</span>{r.lecturer || '-'}</div>
-                            <div><span className="text-gray-400">場地：</span>{r.venue || '-'}</div>
-                            <div><span className="text-gray-400">聯繫窗口：</span>{r.contact || '-'}</div>
-                            <div><span className="text-gray-400">輪值人員：</span>{names(r.duty)}</div>
-                            <div><span className="text-gray-400">實際出席人員：</span>{names(r.attended_staff)}</div>
-                            <div><span className="text-gray-400">出席少年：</span>{renderSummary(r)}</div>
+                        <div>
+                            <div className="font-medium text-primary">{r.topic || '（未填主題）'}</div>
+                            <div className="text-sm text-gray-500">{[r.sport, r.lecturer && `講師 ${r.lecturer}`].filter(Boolean).join(' · ')}</div>
                         </div>
-                        <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end gap-2">
-                            <button onClick={(e) => { e.stopPropagation(); openCopy(r); }} className="p-2 text-gray-400 hover:text-green-600" title="複製（建立下一場）"><Copy className="w-4 h-4" /></button>
+                        <div className="pt-2 border-t border-gray-50">{renderPlace(r)}</div>
+                        <div className="pt-2 border-t border-gray-50">{renderStaff(r)}</div>
+                        <div className="pt-2 border-t border-gray-50">{renderYouths(r)}</div>
+                        <div className="flex justify-end">
                             <button onClick={(e) => { e.stopPropagation(); handleDelete(r); }} className="p-2 text-gray-400 hover:text-red-600" title="刪除"><Trash2 className="w-4 h-4" /></button>
                         </div>
                     </div>
@@ -345,80 +373,89 @@ const ExSessionsManagement = ({ isManager, officerId }) => {
                             <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><X className="w-6 h-6" /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">年度</label>
-                                    <select required className={`${inputCls} bg-white`} value={form.year} onChange={e => setForm({ ...form, year: Number(e.target.value) })}>
-                                        {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-                                    </select>
+                            <Group title="場次">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">年度</label>
+                                        <select required className={`${inputCls} bg-white`} value={form.year} onChange={e => setForm({ ...form, year: Number(e.target.value) })}>
+                                            {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">場次</label>
+                                        <input type="number" min="1" required className={inputCls} value={form.session_no} onChange={e => setForm({ ...form, session_no: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">日期</label>
+                                        <input type="date" className={inputCls} value={form.session_date} onChange={e => setForm({ ...form, session_date: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">狀態</label>
+                                        <select className={`${inputCls} bg-white`} value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+                                            {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">場次</label>
-                                    <input type="number" min="1" required className={inputCls} value={form.session_no} onChange={e => setForm({ ...form, session_no: e.target.value })} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">日期</label>
-                                    <input type="date" className={inputCls} value={form.session_date} onChange={e => setForm({ ...form, session_date: e.target.value })} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">狀態</label>
-                                    <select className={`${inputCls} bg-white`} value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
-                                        {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">課程主題</label>
-                                    <input type="text" className={inputCls} value={form.topic} onChange={e => setForm({ ...form, topic: e.target.value })} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">運動項目</label>
-                                    <input type="text" className={inputCls} value={form.sport} onChange={e => setForm({ ...form, sport: e.target.value })} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">講師</label>
-                                    <input type="text" className={inputCls} value={form.lecturer} onChange={e => setForm({ ...form, lecturer: e.target.value })} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">場地</label>
-                                    <input type="text" className={inputCls} value={form.venue} onChange={e => setForm({ ...form, venue: e.target.value })} />
-                                </div>
-                                <div className="sm:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">聯繫窗口</label>
-                                    <input type="text" className={inputCls} value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })} />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">輪值人員（本專案成員）</label>
-                                    <MultiSelectFilter label="選擇輪值人員" options={memberOptions} selected={form.duty_ids}
-                                        onChange={vals => setForm({ ...form, duty_ids: vals })} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">實際出席人員（本專案成員）</label>
-                                    <MultiSelectFilter label="選擇實際出席人員" options={memberOptions} selected={form.staff_ids}
-                                        onChange={setAttendedStaff} />
-                                </div>
-                            </div>
+                            </Group>
 
-                            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-3">
-                                <div className="flex flex-wrap justify-between items-center gap-2">
-                                    <h4 className="font-bold text-primary">出席少年與考核表</h4>
-                                    <span className="text-xs text-gray-400">預設帶入「目前參加中」的少年；填寫人員只能從上方「實際出席人員」選；活動尚未儲存時，按「填寫」會先自動儲存</span>
+                            <Group title="課程">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">課程主題</label>
+                                        <input type="text" className={inputCls} value={form.topic} onChange={e => setForm({ ...form, topic: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">運動項目</label>
+                                        <input type="text" className={inputCls} value={form.sport} onChange={e => setForm({ ...form, sport: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">講師</label>
+                                        <input type="text" className={inputCls} value={form.lecturer} onChange={e => setForm({ ...form, lecturer: e.target.value })} />
+                                    </div>
                                 </div>
+                            </Group>
+
+                            <Group title="場地與聯繫窗口">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">場地</label>
+                                        <input type="text" className={inputCls} value={form.venue} onChange={e => setForm({ ...form, venue: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">聯繫窗口</label>
+                                        <input type="text" className={inputCls} value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })} />
+                                    </div>
+                                </div>
+                            </Group>
+
+                            <Group title="工作人員" hint="皆為本專案成員；實際出席人員會成為考核表「填寫人員」的選項">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">輪值人員</label>
+                                        <MultiSelectFilter label="選擇輪值人員" options={memberOptions} selected={form.duty_ids}
+                                            onChange={vals => setForm({ ...form, duty_ids: vals })} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">實際出席人員</label>
+                                        <MultiSelectFilter label="選擇實際出席人員" options={memberOptions} selected={form.staff_ids}
+                                            onChange={setAttendedStaff} />
+                                    </div>
+                                </div>
+                            </Group>
+
+                            <Group title="出席少年與考核表" hint="預設帶入「目前參加中」的少年；活動尚未儲存時，按「填寫」會先自動儲存">
                                 {form.youths.length === 0 ? (
                                     <div className="text-sm text-gray-400 py-3">目前沒有參加中的少年，可用下方選單加入。</div>
                                 ) : (
-                                    <div className="overflow-x-auto">
+                                    <div className="overflow-x-auto bg-white rounded-lg border border-gray-100">
                                         <table className="w-full text-left text-sm border-collapse">
                                             <thead>
-                                                <tr className="text-gray-600 border-b border-gray-200">
-                                                    <th className="py-2 pr-2 min-w-[90px]">少年</th>
-                                                    <th className="py-2 pr-2 w-24">出席狀態</th>
-                                                    <th className="py-2 pr-2 w-28">考核狀態</th>
-                                                    <th className="py-2 pr-2 w-36">填寫人員</th>
-                                                    <th className="py-2 pr-2 text-center">考核表</th>
+                                                <tr className="text-gray-500 text-xs bg-gray-50 border-b border-gray-100">
+                                                    <th className="py-2 px-3 font-medium min-w-[90px]">少年</th>
+                                                    <th className="py-2 px-2 font-medium w-24">出席狀態</th>
+                                                    <th className="py-2 px-2 font-medium w-28">考核狀態</th>
+                                                    <th className="py-2 px-2 font-medium w-36">填寫人員</th>
+                                                    <th className="py-2 px-2 font-medium text-center">考核表</th>
                                                     <th className="py-2 w-8"></th>
                                                 </tr>
                                             </thead>
@@ -431,44 +468,44 @@ const ExSessionsManagement = ({ isManager, officerId }) => {
                                                     // 已儲存的活動，檢視隨時可開；尚未儲存時，有填寫權限才能開（會自動先儲存）
                                                     const fillDisabled = !saved && !mayFill;
                                                     return (
-                                                        <tr key={y.id} className="border-b border-gray-100">
-                                                            <td className="py-2 pr-2 font-medium">{y.name}</td>
-                                                            <td className="py-2 pr-2">
+                                                        <tr key={y.id} className="border-b border-gray-50 last:border-b-0">
+                                                            <td className="py-2 px-3 font-medium">{y.name}</td>
+                                                            <td className="py-2 px-2">
                                                                 <select className={miniSelect} value={y.attendance} onChange={e => patchYouth(y.id, { attendance: e.target.value })}>
                                                                     {ATTENDANCE.map(a => <option key={a} value={a}>{a}</option>)}
                                                                 </select>
                                                             </td>
-                                                            <td className="py-2 pr-2">
+                                                            <td className="py-2 px-2">
                                                                 <select className={miniSelect} value={y.review_status} onChange={e => patchYouth(y.id, { review_status: e.target.value })}>
                                                                     {REVIEW_STATUSES.map(a => (
                                                                         <option key={a} value={a} disabled={a !== '待填寫' && !y.has_form}>{a}</option>
                                                                     ))}
                                                                 </select>
                                                             </td>
-                                                            <td className="py-2 pr-2">
+                                                            <td className="py-2 px-2">
                                                                 <select className={miniSelect} value={y.filler_id} onChange={e => patchYouth(y.id, { filler_id: e.target.value })}
                                                                     disabled={form.staff_ids.length === 0} title={form.staff_ids.length === 0 ? '請先選擇實際出席人員' : ''}>
                                                                     <option value="">未分配</option>
                                                                     {attendedStaffOptions.map(m => <option key={m.officer_id} value={m.officer_id}>{m.name}</option>)}
                                                                 </select>
                                                             </td>
-                                                            <td className="py-2 pr-2">
+                                                            <td className="py-2 px-2">
                                                                 <div className="flex justify-center gap-2">
                                                                     <button type="button" disabled={fillDisabled} onClick={() => openFill(y)}
                                                                         title={fillDisabled ? '請先指派自己為填寫人員，或由專案管理者操作' : (canFill ? (saved ? '填寫考核表' : '填寫考核表（會先自動儲存活動）') : '檢視考核表')}
-                                                                        className="px-2 py-1 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-white disabled:opacity-40 flex items-center gap-1 whitespace-nowrap">
+                                                                        className="px-2.5 py-1 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-40 flex items-center gap-1 whitespace-nowrap">
                                                                         <FileText className="w-3.5 h-3.5" /> {canFill ? '填寫' : '檢視'}
                                                                     </button>
                                                                     {isManager && (
                                                                         <button type="button" disabled={!saved || !y.has_form} onClick={() => handlePrint(y)}
                                                                             title={!saved ? '請先儲存活動' : (!y.has_form ? '尚未填寫考核表' : '匯出列印（列印後考核狀態會改為已核章）')}
-                                                                            className="px-2 py-1 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-white disabled:opacity-40 flex items-center gap-1 whitespace-nowrap">
+                                                                            className="px-2.5 py-1 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-40 flex items-center gap-1 whitespace-nowrap">
                                                                             <Printer className="w-3.5 h-3.5" /> 匯出列印
                                                                         </button>
                                                                     )}
                                                                 </div>
                                                             </td>
-                                                            <td className="py-2">
+                                                            <td className="py-2 pr-2">
                                                                 <button type="button" onClick={() => removeYouth(y.id)} disabled={y.has_form}
                                                                     className="p-1 text-gray-300 hover:text-red-600 disabled:opacity-30 disabled:hover:text-gray-300"
                                                                     title={y.has_form ? '已有考核表資料，不能移出名單' : '移出此場名單'}><X className="w-4 h-4" /></button>
@@ -489,9 +526,9 @@ const ExSessionsManagement = ({ isManager, officerId }) => {
                                         <button type="button" onClick={addYouth} disabled={!addYouthId} className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 hover:bg-white disabled:opacity-40">加入</button>
                                     </div>
                                 )}
-                            </div>
+                            </Group>
 
-                            <div className="pt-4 flex flex-col sm:flex-row justify-end gap-3">
+                            <div className="pt-2 flex flex-col sm:flex-row justify-end gap-3">
                                 <Button variant="outline" type="button" onClick={() => setShowModal(false)} className="w-full sm:w-auto">關閉</Button>
                                 <Button variant="primary" type="submit" className="w-full sm:w-auto">{editingId ? '儲存變更' : '確認新增'}</Button>
                             </div>
