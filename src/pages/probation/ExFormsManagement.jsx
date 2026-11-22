@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import Button from '../../components/Button';
 import ExReviewPrint from './ExReviewPrint';
-import { Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { toROCDate } from '../../utils/dateUtils';
 import { FIELD_TYPES, DEFAULT_PRINT, newField } from '../../utils/reviewFormUtils';
 
@@ -130,10 +130,23 @@ const ExFormsManagement = () => {
                                     <button onClick={() => removeField(i)} className="p-2 text-gray-400 hover:text-red-600" title="刪除欄位"><Trash2 className="w-4 h-4" /></button>
                                 </div>
                                 {(f.type === 'select' || f.type === 'checkbox') && (
-                                    <div>
-                                        <label className="block text-xs text-gray-500 mb-1">選項（一行一個）</label>
-                                        <textarea rows={3} className={inputCls} value={(f.options || []).join('\n')}
-                                            onChange={e => patchField(i, { options: e.target.value.split('\n') })} />
+                                    <div className="space-y-2">
+                                        <label className="block text-xs text-gray-500">
+                                            選項（{f.type === 'select' ? '單選：填寫時一次只能選一個' : '多選：填寫時可複選'}）
+                                        </label>
+                                        {(f.options || []).map((o, oi) => (
+                                            <div key={oi} className="flex items-center gap-2">
+                                                <span className="text-gray-400 w-5 text-center select-none" aria-hidden="true">{f.type === 'select' ? '○' : '☐'}</span>
+                                                <input type="text" className={inputCls} placeholder={`選項 ${oi + 1}`} value={o}
+                                                    onChange={e => patchField(i, { options: f.options.map((x, xi) => (xi === oi ? e.target.value : x)) })} />
+                                                <button type="button" onClick={() => patchField(i, { options: f.options.filter((_, xi) => xi !== oi) })}
+                                                    className="p-1.5 text-gray-300 hover:text-red-600" title="刪除選項"><X className="w-4 h-4" /></button>
+                                            </div>
+                                        ))}
+                                        <button type="button" onClick={() => patchField(i, { options: [...(f.options || []), ''] })}
+                                            className="flex items-center gap-1 text-sm text-primary hover:underline">
+                                            <Plus className="w-4 h-4" /> 新增選項
+                                        </button>
                                     </div>
                                 )}
                                 {f.type === 'scale' && (

@@ -4,8 +4,8 @@ export const FIELD_TYPES = [
     { value: 'text', label: '短文字' },
     { value: 'textarea', label: '長文字' },
     { value: 'number', label: '數字' },
-    { value: 'select', label: '單選（下拉）' },
-    { value: 'checkbox', label: '多選' },
+    { value: 'select', label: '單選（圓點）' },
+    { value: 'checkbox', label: '多選（核取方塊）' },
     { value: 'scale', label: '評分（1 到 N）' },
 ];
 

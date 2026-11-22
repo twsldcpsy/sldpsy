@@ -60,15 +60,23 @@ const ExReviewFill = ({ sessionId, participantId, onClose, onSaved }) => {
                 {f.type === 'textarea' && <textarea rows={4} className={inputCls} disabled={disabled} value={v ?? ''} onChange={e => set(f.id, e.target.value)} />}
                 {f.type === 'number' && <input type="number" className={inputCls} disabled={disabled} value={v ?? ''} onChange={e => set(f.id, e.target.value === '' ? '' : Number(e.target.value))} />}
                 {f.type === 'select' && (
-                    <select className={`${inputCls} bg-white`} disabled={disabled} value={v ?? ''} onChange={e => set(f.id, e.target.value)}>
-                        <option value="">請選擇</option>
-                        {(f.options || []).map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                        {(f.options || []).map(o => (
+                            <label key={o} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                                <input type="radio" name={`field-${f.id}`} disabled={disabled} checked={v === o}
+                                    onChange={() => set(f.id, o)} />
+                                {o}
+                            </label>
+                        ))}
+                        {v && !disabled && (
+                            <button type="button" onClick={() => set(f.id, '')} className="text-xs text-gray-400 hover:text-gray-600 underline">清除選擇</button>
+                        )}
+                    </div>
                 )}
                 {f.type === 'checkbox' && (
                     <div className="flex flex-wrap gap-x-5 gap-y-2">
                         {(f.options || []).map(o => (
-                            <label key={o} className="flex items-center gap-2 text-sm text-gray-700">
+                            <label key={o} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                                 <input type="checkbox" disabled={disabled} checked={Array.isArray(v) && v.includes(o)}
                                     onChange={e => set(f.id, e.target.checked ? [...(Array.isArray(v) ? v : []), o] : (Array.isArray(v) ? v : []).filter(x => x !== o))} />
                                 {o}

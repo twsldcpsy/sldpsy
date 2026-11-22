@@ -10,6 +10,17 @@ const Cell = ({ label, value }) => (
     </div>
 );
 
+// 單選、多選：列出所有選項，選到的打勾（多選 ☑／☐，單選 ●／○），像紙本表單
+const Choices = ({ field, value }) => (
+    <div className="flex flex-wrap gap-x-5 gap-y-1">
+        {(field.options || []).map(o => {
+            const on = field.type === 'checkbox' ? (Array.isArray(value) && value.includes(o)) : value === o;
+            const mark = field.type === 'checkbox' ? (on ? '☑' : '☐') : (on ? '●' : '○');
+            return <span key={o} className="whitespace-nowrap">{mark} {o}</span>;
+        })}
+    </div>
+);
+
 // 考核表的列印內容。payload = ex_review_get 的回傳（或預覽用的假資料）。
 export const ReviewSheet = ({ payload }) => {
     const form = payload.form || { fields: [], print: {} };
@@ -48,7 +59,10 @@ export const ReviewSheet = ({ payload }) => {
                     f.type === 'section' ? (
                         <div key={f.id} className="bg-gray-100 px-3 py-2 text-sm font-bold border-b border-gray-300">{f.label}</div>
                     ) : (
-                        <Cell key={f.id} label={f.label} value={displayValue(f, data[f.id])} />
+                        <Cell key={f.id} label={f.label}
+                            value={(f.type === 'select' || f.type === 'checkbox')
+                                ? <Choices field={f} value={data[f.id]} />
+                                : displayValue(f, data[f.id])} />
                     )
                 ))}
                 {(form.fields || []).length === 0 && <div className="px-3 py-6 text-center text-sm text-gray-400">（尚未設定欄位）</div>}
