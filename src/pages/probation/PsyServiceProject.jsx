@@ -4,7 +4,7 @@ import { FileText, User, Settings, Database, Megaphone, ClipboardList, Users, Ar
 import BookingManagement from './BookingManagementComponent';
 import CaseDatabase from './CaseDatabaseComponent';
 import PsychologistDatabase from './PsychologistDatabaseComponent';
-import AdvancedStats from './AdvancedStats';
+import PsyAdvancedStats from './PsyAdvancedStats';
 import WriteOffStats from './WriteOffStats';
 import ProbationOfficerDatabase from './ProbationOfficerDatabaseComponent';
 import BulletinBoardManagement from './BulletinBoardManagement';
@@ -59,7 +59,7 @@ const PsyServiceProject = ({ project, officerId, isSystemAdmin, onBack }) => {
                 {subTab === 'bookings' && <BookingManagement allowExport={true} showReimbursement={true} />}
                 {subTab === 'juveniles' && <CaseDatabase />}
                 {subTab === 'psychologists' && <PsychologistDatabase />}
-                {subTab === 'stats_adv' && <AdvancedStats />}
+                {subTab === 'stats_adv' && <PsyAdvancedStats />}
                 {subTab === 'writeoff' && <WriteOffStats />}
                 {subTab === 'staff' && <ProbationOfficerDatabase limited={!isSystemAdmin} />}
                 {subTab === 'bulletins' && <BulletinBoardManagement ownerId={isSystemAdmin ? null : officerId} />}
