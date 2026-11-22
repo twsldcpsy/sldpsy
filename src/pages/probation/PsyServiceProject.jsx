@@ -62,7 +62,7 @@ const PsyServiceProject = ({ project, officerId, isSystemAdmin, onBack }) => {
                 {subTab === 'stats_adv' && <PsyAdvancedStats />}
                 {subTab === 'writeoff' && <WriteOffStats />}
                 {subTab === 'staff' && <ProbationOfficerDatabase limited={!isSystemAdmin} />}
-                {subTab === 'bulletins' && <BulletinBoardManagement ownerId={isSystemAdmin ? null : officerId} />}
+                {subTab === 'bulletins' && <BulletinBoardManagement projectId={project.id} ownerId={isSystemAdmin ? null : officerId} />}
                 {subTab === 'surveys' && <SurveyManagement adminId={officerId} />}
             </div>
         </div>

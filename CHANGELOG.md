@@ -17,6 +17,8 @@
   - DB：`roles_step6_project_pages.sql`（`project_pages` 與 `project_page_*` RPC；可重複執行；**尚未對正式庫執行**，需在 step5 之後執行）
   - 運動戒癮團體專案新增子頁「工作分配維護」：本專案成員（專案管理者、專案成員）被指派進專案時自動列出，顯示主責項目（下拉：計劃統籌／協同辦理／未指定，位於股別之前）、股別、姓名、分機（取自工作人員資料，唯讀）與「工作內容」長文字框；平常為唯讀的閱讀模式，只有專案管理者（與系統管理者）看得到「編輯」並可儲存修改（一次儲存所有修改的列），專案成員只能閱讀，資料庫也只接受專案管理者與系統管理者寫入；人員被移出專案後從列表消失、工作內容保留
   - DB：`roles_step7_exercise_assignments.sql`（`ex_work_assignments`、`ex_assignment_list`、`ex_assignment_save`；可重複執行；**尚未對正式庫執行**，需在 step6 之後執行）
+  - 運動戒癮團體專案新增子頁「核銷作業」（先建立空白分頁，功能待開發）與「公告欄維護」（僅專案管理者與系統管理者；只能對工作人員公告，不能對心理師；專案管理者只能維護自己建立的公告）；心理服務專案的公告欄維護同步改為屬於該專案；公告改為依專案管理：專案管理者只能在自己管理的專案發公告、只能改自己建立的，既有公告視為系統公告、僅系統管理者可改；資料庫讀取也依公告對象過濾（心理師看不到只對工作人員的公告，工作人員看不到未對其股別公告的內容）
+  - DB：`roles_step8_bulletin_projects.sql`（`bulletins.project_id`、`app_session_department`、`app_session_manages_project`、公告 RLS 與觸發器；取代 step3 的公告政策；可重複執行；**尚未對正式庫執行**，需在 step7 之後執行）
   - 只有一個專案且可進入時，點「專案權限」直接進入該專案，不需選擇（多個專案時才顯示專案列表）
   - 系統管理者頁保留完整版的工作人員維護、公告欄維護、問卷管理，以及專案管理
   - DB：`roles_step3_project_scope.sql`（專案 key、`app_session_is_project_manager`、心理師管理函式與問卷函式改驗專案管理者、`pm_*_officer`、`bulletins`／`surveys` 新增 `created_by` 與 RLS／觸發器；可重複執行；**尚未對正式庫執行**，需在 step1、step2 之後執行）

@@ -5,8 +5,10 @@ import MultiSelectFilter from '../../components/MultiSelectFilter';
 import { Plus, X, Edit, Trash2, Megaphone, CalendarDays, Clock, Users } from 'lucide-react';
 import { toROCDate } from '../../utils/dateUtils';
 
+// projectId 有值時：只列出該專案的公告，新增的公告屬於該專案
 // ownerId 有值時（專案管理者）：只列出並維護自己建立的公告；系統管理者不傳，維護全部
-const BulletinBoardManagement = ({ ownerId = null }) => {
+// staffOnly：只能對工作人員公告（運動戒癮團體專案），不顯示心理師對象
+const BulletinBoardManagement = ({ ownerId = null, projectId = null, staffOnly = false }) => {
     const [bulletins, setBulletins] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -61,6 +63,7 @@ const BulletinBoardManagement = ({ ownerId = null }) => {
                 .from('bulletins')
                 .select('*')
                 .order('created_at', { ascending: false });
+            if (projectId) query = query.eq('project_id', projectId);
             if (ownerId) query = query.eq('created_by', ownerId);
             const { data, error } = await query;
 
@@ -83,7 +86,7 @@ const BulletinBoardManagement = ({ ownerId = null }) => {
             is_active: true,
             start_date: '',
             end_date: '',
-            target_all_psychologists: true,
+            target_all_psychologists: !staffOnly,
             target_all_officers: true,
             target_psychologist_ids: [],
             target_departments: []
@@ -117,9 +120,9 @@ const BulletinBoardManagement = ({ ownerId = null }) => {
                 is_active: formData.is_active,
                 start_date: formData.start_date || null,
                 end_date: formData.end_date || null,
-                target_all_psychologists: formData.target_all_psychologists,
+                target_all_psychologists: staffOnly ? false : formData.target_all_psychologists,
                 target_all_officers: formData.target_all_officers,
-                target_psychologist_ids: formData.target_psychologist_ids,
+                target_psychologist_ids: staffOnly ? [] : formData.target_psychologist_ids,
                 target_departments: formData.target_departments,
                 updated_at: new Date().toISOString()
             };
@@ -134,7 +137,7 @@ const BulletinBoardManagement = ({ ownerId = null }) => {
             } else {
                 const { error: insertError } = await supabase
                     .from('bulletins')
-                    .insert([payload]);
+                    .insert([{ ...payload, project_id: projectId }]);
                 error = insertError;
             }
 
@@ -143,7 +146,7 @@ const BulletinBoardManagement = ({ ownerId = null }) => {
             setShowModal(false);
             fetchBulletins();
         } catch (error) {
-            alert(isEditing ? '更新失敗: ' : '新增失敗: ' + error.message);
+            alert((isEditing ? '更新失敗: ' : '新增失敗: ') + error.message);
         }
     };
 
@@ -308,7 +311,9 @@ const BulletinBoardManagement = ({ ownerId = null }) => {
 
                             <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 space-y-3">
                                 <h4 className="text-sm font-bold text-gray-700">顯示對象</h4>
+                                {staffOnly && <p className="text-xs text-gray-500">本專案的公告只能對工作人員公告。</p>}
                                 <div className="flex gap-4">
+                                    {!staffOnly && (
                                     <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
                                         <input
                                             type="checkbox"
@@ -318,6 +323,7 @@ const BulletinBoardManagement = ({ ownerId = null }) => {
                                         />
                                         心理師 (全部)
                                     </label>
+                                    )}
                                     <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
                                         <input
                                             type="checkbox"
@@ -329,6 +335,7 @@ const BulletinBoardManagement = ({ ownerId = null }) => {
                                     </label>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {!staffOnly && (
                                     <div>
                                         <label className="block text-xs font-medium text-gray-500 mb-1">個別心理師</label>
                                         <MultiSelectFilter
@@ -338,6 +345,7 @@ const BulletinBoardManagement = ({ ownerId = null }) => {
                                             onChange={vals => setFormData({ ...formData, target_psychologist_ids: vals })}
                                         />
                                     </div>
+                                    )}
                                     <div>
                                         <label className="block text-xs font-medium text-gray-500 mb-1">個別股別</label>
                                         <MultiSelectFilter
