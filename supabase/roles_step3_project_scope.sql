@@ -1,7 +1,8 @@
 -- ============================================================
 -- 權限調整 第 3 步：心理服務專案的管理功能、專案管理者的受限版維護
 -- 內容：
---   1. 專案新增 key（程式用來辨認專案），第一個專案更名為「心理服務專案」(key = psy_service)
+--   1. 專案新增 key（程式用來辨認專案），第一個專案更名為「心理服務專案」(key = psy_service)；
+--      新增「運動戒癮團體專案」(key = exercise_addiction)，不自動指派成員
 --   2. app_session_is_project_manager(key)：系統管理者，或該專案（啟用中）的專案管理者
 --   3. 心理服務人員（心理師）維護：admin_*_psychologist 的門檻由「系統管理者」改為
 --      「心理服務專案的專案管理者或系統管理者」
@@ -35,6 +36,11 @@ begin
     update projects set name = '心理服務專案', key = 'psy_service' where id = v_id;
   end if;
 end $$;
+
+-- 運動戒癮團體專案（頁面尚在設計，成員由系統管理者於專案管理頁指派）
+insert into projects (name, description, key)
+select '運動戒癮團體專案', '運動戒癮團體相關功能', 'exercise_addiction'
+ where not exists (select 1 from projects where key = 'exercise_addiction');
 
 -- 清單多回傳 key（程式用來辨認專案）
 create or replace function project_list() returns jsonb

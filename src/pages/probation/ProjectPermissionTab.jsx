@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FolderKanban } from 'lucide-react';
 import { PROJECT_ROLE_LABEL } from '../../utils/projectUtils';
 import PsyServiceProject from './PsyServiceProject';
+import BlankProject from './BlankProject';
 
 // 「專案權限」分頁：專案成員、專案管理者（及系統管理者）可進入。
 // 目前先列出自己參與的專案與專案身分；各專案的內容之後依專案逐一設計。
@@ -10,12 +11,15 @@ const ProjectPermissionTab = ({ projects, isSystemAdmin, officerId }) => {
     // 一般使用者只會拿到自己參與的專案；系統管理者拿到全部，其中沒有專案身分的另外標示
     const list = projects || [];
 
-    // 心理服務專案頁面：專案管理者與系統管理者可進入
-    const canEnter = (p) => p.key === 'psy_service' && p.is_active && (isSystemAdmin || p.my_role === 'manager');
+    // 專案頁面：專案管理者與系統管理者可進入；尚無專屬頁面的專案先進入空白框架
+    const canEnter = (p) => p.is_active && (isSystemAdmin || p.my_role === 'manager');
 
     // 只有一個專案、且可進入時，直接進入該專案，不需選擇（此時沒有「回到專案列表」）
     const onlyProject = list.length === 1 && canEnter(list[0]) ? list[0] : null;
     const openProject = onlyProject || list.find(p => p.id === openId && canEnter(p));
+    if (openProject && openProject.key !== 'psy_service') {
+        return <BlankProject project={openProject} onBack={onlyProject ? null : () => setOpenId(null)} />;
+    }
     if (openProject) {
         return (
             <PsyServiceProject
@@ -58,7 +62,7 @@ const ProjectPermissionTab = ({ projects, isSystemAdmin, officerId }) => {
                                 <button onClick={() => setOpenId(p.id)} className="mt-3 px-4 py-1.5 text-sm rounded-lg bg-secondary text-white hover:opacity-90">進入專案</button>
                             ) : (
                                 <div className="text-xs text-gray-400 mt-3">
-                                    {p.key === 'psy_service' ? '專案成員目前沒有開放的管理功能' : '此專案的頁面尚未開放'}
+                                    專案成員目前沒有開放的功能
                                 </div>
                             )}
                         </div>
