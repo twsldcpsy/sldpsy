@@ -10,7 +10,8 @@ const DEFAULT_PASSWORD = '28312321';
 const STAFF_TYPES = ['保護官', '心輔員', '保護性社工', '測試人員'];
 const roleLabel = (r) => (r === 'admin' ? '系統管理者' : r === 'manager' ? '審閱者' : '一般權限');
 
-const ProbationOfficerDatabase = () => {
+// limited = true：專案管理者使用的受限版——不能編輯權限別，也只能維護權限別為「一般權限」的人員
+const ProbationOfficerDatabase = ({ limited = false }) => {
     const [officers, setOfficers] = useState([]);
     const [memberships, setMemberships] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -32,6 +33,7 @@ const ProbationOfficerDatabase = () => {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchData = async () => {
@@ -44,10 +46,12 @@ const ProbationOfficerDatabase = () => {
             if (error) throw error;
             setOfficers(data);
 
-            // 專案身分（各專案的角色）；取不到時只是不顯示，不影響人員列表
-            const { data: mData, error: mError } = await supabase.rpc('project_memberships_all');
-            if (mError) console.error('Error fetching memberships:', mError);
-            setMemberships(mData || []);
+            // 專案身分（各專案的角色，僅系統管理者可查）；取不到時只是不顯示，不影響人員列表
+            if (!limited) {
+                const { data: mData, error: mError } = await supabase.rpc('project_memberships_all');
+                if (mError) console.error('Error fetching memberships:', mError);
+                setMemberships(mData || []);
+            }
 
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -55,6 +59,9 @@ const ProbationOfficerDatabase = () => {
             setLoading(false);
         }
     };
+
+    // 受限版只能操作一般權限的人員
+    const canTouch = (o) => !limited || o.role === 'general';
 
     const projectRolesOf = (officerId) => memberships.filter(m => m.officer_id === officerId);
 
@@ -98,11 +105,11 @@ const ProbationOfficerDatabase = () => {
             if (isEditing) {
                 // Update basic info via RPC
                 const { error: updateError } = await supabase
-                    .rpc('admin_update_officer', {
+                    .rpc(limited ? 'pm_update_officer' : 'admin_update_officer', {
                         target_id: editingId,
                         o_name: formData.name,
                         o_department: formData.department,
-                        o_role: formData.role,
+                        ...(limited ? {} : { o_role: formData.role }),
                         o_staff_type: formData.staff_type,
                         o_contact_info: formData.contact_info,
                         o_extension_number: formData.extension_number,
@@ -114,7 +121,7 @@ const ProbationOfficerDatabase = () => {
                 // Handle Password Reset if provided
                 if (formData.password) {
                     const { error: pwdError } = await supabase
-                        .rpc('admin_reset_password_officer', {
+                        .rpc(limited ? 'pm_reset_password_officer' : 'admin_reset_password_officer', {
                             target_id: editingId,
                             new_password: formData.password
                         });
@@ -123,10 +130,10 @@ const ProbationOfficerDatabase = () => {
             } else {
                 // Insert New User via RPC
                 const { error: insertError } = await supabase
-                    .rpc('admin_create_officer', {
+                    .rpc(limited ? 'pm_create_officer' : 'admin_create_officer', {
                         o_name: formData.name,
                         o_department: formData.department,
-                        o_role: formData.role,
+                        ...(limited ? {} : { o_role: formData.role }),
                         o_staff_type: formData.staff_type,
                         o_password: formData.password || DEFAULT_PASSWORD,
                         o_contact_info: formData.contact_info,
@@ -150,7 +157,7 @@ const ProbationOfficerDatabase = () => {
 
         try {
             const { error } = await supabase
-                .rpc('admin_delete_officer', { target_id: id });
+                .rpc(limited ? 'pm_delete_officer' : 'admin_delete_officer', { target_id: id });
 
             if (error) throw error;
             fetchData();
@@ -164,7 +171,7 @@ const ProbationOfficerDatabase = () => {
 
         try {
             const { error } = await supabase
-                .rpc('admin_reset_password_officer', { target_id: target.id, new_password: DEFAULT_PASSWORD });
+                .rpc(limited ? 'pm_reset_password_officer' : 'admin_reset_password_officer', { target_id: target.id, new_password: DEFAULT_PASSWORD });
 
             if (error) throw error;
             alert(`已將「${target.name}」的密碼重設為預設密碼（${DEFAULT_PASSWORD}），請通知該工作人員登入後自行修改。`);
@@ -176,7 +183,7 @@ const ProbationOfficerDatabase = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-primary">工作人員資料庫</h3>
+                <h3 className="text-xl font-bold text-primary">工作人員維護</h3>
                 <Button variant="primary" onClick={handleOpenAdd} className="flex items-center gap-1">
                     <Plus className="w-4 h-4" /> 新增工作人員
                 </Button>
@@ -191,7 +198,7 @@ const ProbationOfficerDatabase = () => {
                             <th className="py-3 px-4">姓名</th>
                             <th className="py-3 px-4">身分</th>
                             <th className="py-3 px-4">權限別</th>
-                            <th className="py-3 px-4">專案身分</th>
+                            {!limited && <th className="py-3 px-4">專案身分</th>}
                             <th className="py-3 px-4">聯繫方式</th>
                             <th className="py-3 px-4">分機號碼</th>
                             <th className="py-3 px-4 text-center">操作</th>
@@ -199,9 +206,9 @@ const ProbationOfficerDatabase = () => {
                     </thead>
                     <tbody className="text-gray-700">
                         {loading ? (
-                            <tr><td colSpan="9" className="py-8 text-center text-gray-400">載入中...</td></tr>
+                            <tr><td colSpan={limited ? 8 : 9} className="py-8 text-center text-gray-400">載入中...</td></tr>
                         ) : officers.length === 0 ? (
-                            <tr><td colSpan="9" className="py-8 text-center text-gray-400">目前尚無資料</td></tr>
+                            <tr><td colSpan={limited ? 8 : 9} className="py-8 text-center text-gray-400">目前尚無資料</td></tr>
                         ) : (
                             officers.map((o) => (
                                 <tr key={o.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
@@ -216,25 +223,29 @@ const ProbationOfficerDatabase = () => {
                                             {roleLabel(o.role)}
                                         </span>
                                     </td>
-                                    <td className="py-3 px-4 text-sm">
-                                        {projectRolesOf(o.id).length === 0 ? <span className="text-gray-300">-</span> : projectRolesOf(o.id).map(m => (
-                                            <div key={m.project_id}>{m.project_name}：{PROJECT_ROLE_LABEL[m.project_role]}</div>
-                                        ))}
-                                    </td>
+                                    {!limited && (
+                                        <td className="py-3 px-4 text-sm">
+                                            {projectRolesOf(o.id).length === 0 ? <span className="text-gray-300">-</span> : projectRolesOf(o.id).map(m => (
+                                                <div key={m.project_id}>{m.project_name}：{PROJECT_ROLE_LABEL[m.project_role]}</div>
+                                            ))}
+                                        </td>
+                                    )}
                                     <td className="py-3 px-4">{o.contact_info || '-'}</td>
                                     <td className="py-3 px-4">{o.extension_number || '-'}</td>
                                     <td className="py-3 px-4 flex justify-center gap-2">
                                         <button
                                             onClick={() => handleOpenEdit(o)}
-                                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                                            title="編輯"
+                                            disabled={!canTouch(o)}
+                                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-400"
+                                            title={canTouch(o) ? '編輯' : '僅系統管理者可維護此權限別的人員'}
                                         >
                                             <Edit className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(o.id)}
-                                            className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                                            title="刪除"
+                                            disabled={!canTouch(o)}
+                                            className="p-1 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-400"
+                                            title={canTouch(o) ? '刪除' : '僅系統管理者可維護此權限別的人員'}
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -254,7 +265,7 @@ const ProbationOfficerDatabase = () => {
                     <div className="py-8 text-center text-gray-400 bg-white rounded-xl border border-gray-100">目前尚無資料</div>
                 ) : (
                     officers.map((o) => (
-                        <div key={o.id} onClick={() => handleOpenEdit(o)} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm active:scale-[0.98] transition-transform">
+                        <div key={o.id} onClick={() => canTouch(o) && handleOpenEdit(o)} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm active:scale-[0.98] transition-transform">
                             <div className="flex justify-between items-start mb-2">
                                 <div className="min-w-0">
                                     <div className="font-bold text-gray-800 text-lg truncate">{o.name}</div>
@@ -278,14 +289,16 @@ const ProbationOfficerDatabase = () => {
                             <div className="mt-3 pt-3 border-t border-gray-50 flex justify-end gap-2">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleOpenEdit(o); }}
-                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    disabled={!canTouch(o)}
+                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                     title="編輯"
                                 >
                                     <Edit className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleDelete(o.id); }}
-                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    disabled={!canTouch(o)}
+                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                     title="刪除"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -359,7 +372,8 @@ const ProbationOfficerDatabase = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">權限別</label>
                                 <select
                                     required
-                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white"
+                                    disabled={limited}
+                                    className="w-full p-3 sm:p-2 min-h-[44px] sm:min-h-0 text-base sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none bg-white disabled:bg-gray-100 disabled:text-gray-500"
                                     value={formData.role}
                                     onChange={e => setFormData({ ...formData, role: e.target.value })}
                                 >
@@ -367,6 +381,7 @@ const ProbationOfficerDatabase = () => {
                                     <option value="manager">審閱者</option>
                                     <option value="admin">系統管理者</option>
                                 </select>
+                                {limited && <p className="text-xs text-gray-400 mt-1">權限別僅系統管理者可編輯</p>}
                             </div>
 
                             <div>

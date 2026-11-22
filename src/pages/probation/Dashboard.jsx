@@ -4,8 +4,6 @@ import { User, FileText, Database, Settings, Search, Plus, X, Save, ClipboardLis
 import Button from '../../components/Button';
 import BulletinBoardWidget from '../../components/BulletinBoardWidget';
 
-import CaseDatabase from './CaseDatabaseComponent';
-import PsychologistDatabase from './PsychologistDatabaseComponent';
 import ProbationOfficerDatabase from './ProbationOfficerDatabaseComponent';
 import BookingManagement from './BookingManagementComponent';
 import OfficerProfileComponent from './OfficerProfileComponent';
@@ -15,8 +13,6 @@ import ProjectManagement from './ProjectManagement';
 import ProjectPermissionTab from './ProjectPermissionTab';
 import { PROJECT_ROLE_LABEL } from '../../utils/projectUtils';
 import { supabase } from '../../supabase';
-import AdvancedStats from './AdvancedStats';
-import WriteOffStats from './WriteOffStats';
 import ManagerStats from './ManagerStats';
 
 // General Permissions Tab Content
@@ -98,15 +94,10 @@ const DepartmentStats = () => {
 };
 
 const Maintenance = ({ adminId }) => {
-    const [subTab, setSubTab] = useState('bookings');
+    const [subTab, setSubTab] = useState('officers');
 
     const tabs = [
-        { id: 'bookings', label: '預約管理', icon: FileText },
-        { id: 'juveniles', label: '個案資料庫維護', icon: User },
-        { id: 'psychologists', label: '心理師資料庫維護', icon: User },
-        { id: 'officers', label: '工作人員資料庫維護', icon: Settings },
-        { id: 'stats_adv', label: '進階統計', icon: Database },
-        { id: 'writeoff', label: '核銷作業', icon: FileText },
+        { id: 'officers', label: '工作人員維護', icon: Settings },
         { id: 'bulletins', label: '公告欄維護', icon: FileText },
         { id: 'surveys', label: '問卷管理', icon: ClipboardList },
         { id: 'projects', label: '專案管理', icon: FolderKanban },
@@ -133,12 +124,7 @@ const Maintenance = ({ adminId }) => {
             </div>
 
             <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                {subTab === 'bookings' && <BookingManagement allowExport={true} showReimbursement={true} />}
-                {subTab === 'juveniles' && <CaseDatabase />}
-                {subTab === 'psychologists' && <PsychologistDatabase />}
                 {subTab === 'officers' && <ProbationOfficerDatabase />}
-                {subTab === 'stats_adv' && <AdvancedStats />}
-                {subTab === 'writeoff' && <WriteOffStats />}
                 {subTab === 'bulletins' && <BulletinBoardManagement />}
                 {subTab === 'surveys' && <SurveyManagement adminId={adminId} />}
                 {subTab === 'projects' && <ProjectManagement />}
@@ -238,7 +224,7 @@ const Dashboard = () => {
             <div className="mt-6">
                 {activeTab === 'cases' && <GeneralTab isAdmin={isSystemAdmin} departmentName={departmentName} officerId={officerId} />}
                 {activeTab === 'stats' && isManager && <DepartmentStats isAdmin={isSystemAdmin} />}
-                {activeTab === 'project' && showProjectTab && <ProjectPermissionTab projects={projects} isSystemAdmin={isSystemAdmin} />}
+                {activeTab === 'project' && showProjectTab && <ProjectPermissionTab projects={projects} isSystemAdmin={isSystemAdmin} officerId={officerId} />}
                 {activeTab === 'admin' && isSystemAdmin && <Maintenance adminId={officerId} />}
             </div>
         </div>

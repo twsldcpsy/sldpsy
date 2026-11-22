@@ -5,7 +5,8 @@ import MultiSelectFilter from '../../components/MultiSelectFilter';
 import { Plus, X, Edit, Trash2, Megaphone, CalendarDays, Clock, Users } from 'lucide-react';
 import { toROCDate } from '../../utils/dateUtils';
 
-const BulletinBoardManagement = () => {
+// ownerId 有值時（專案管理者）：只列出並維護自己建立的公告；系統管理者不傳，維護全部
+const BulletinBoardManagement = ({ ownerId = null }) => {
     const [bulletins, setBulletins] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -31,6 +32,7 @@ const BulletinBoardManagement = () => {
     useEffect(() => {
         fetchBulletins();
         fetchDropdowns();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchDropdowns = async () => {
@@ -55,10 +57,12 @@ const BulletinBoardManagement = () => {
 
     const fetchBulletins = async () => {
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('bulletins')
                 .select('*')
                 .order('created_at', { ascending: false });
+            if (ownerId) query = query.eq('created_by', ownerId);
+            const { data, error } = await query;
 
             if (error) throw error;
             setBulletins(data || []);
