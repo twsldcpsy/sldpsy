@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import Button from '../../components/Button';
-import { Plus, X, Trash2, Edit } from 'lucide-react';
+import { Plus, X, Trash2, Edit, KeyRound } from 'lucide-react';
+
+// 新增帳號與「重設為預設密碼」共用的預設值
+const DEFAULT_PASSWORD = '28312321';
 
 const ProbationOfficerDatabase = () => {
     const [officers, setOfficers] = useState([]);
@@ -49,7 +52,7 @@ const ProbationOfficerDatabase = () => {
             name: '',
             department: '',
             role: 'general',
-            password: '28312321',
+            password: DEFAULT_PASSWORD,
             contact_info: '',
             extension_number: '',
             display_order: 0
@@ -108,7 +111,7 @@ const ProbationOfficerDatabase = () => {
                         o_name: formData.name,
                         o_department: formData.department,
                         o_role: formData.role,
-                        o_password: formData.password || '28312321',
+                        o_password: formData.password || DEFAULT_PASSWORD,
                         o_contact_info: formData.contact_info,
                         o_extension_number: formData.extension_number,
                         o_display_order: parseInt(formData.display_order) || 0
@@ -136,6 +139,20 @@ const ProbationOfficerDatabase = () => {
             fetchData();
         } catch (error) {
             alert('刪除失敗: ' + error.message);
+        }
+    };
+
+    const handleResetToDefault = async (target) => {
+        if (!window.confirm(`確定要將「${target.name}」的密碼重設為預設密碼（${DEFAULT_PASSWORD}）嗎？\n請通知該保護官登入後自行修改密碼。`)) return;
+
+        try {
+            const { error } = await supabase
+                .rpc('admin_reset_password_officer', { target_id: target.id, new_password: DEFAULT_PASSWORD });
+
+            if (error) throw error;
+            alert(`已將「${target.name}」的密碼重設為預設密碼（${DEFAULT_PASSWORD}），請通知該保護官登入後自行修改。`);
+        } catch (error) {
+            alert('重設失敗: ' + error.message);
         }
     };
 
@@ -192,6 +209,13 @@ const ProbationOfficerDatabase = () => {
                                             <Edit className="w-4 h-4" />
                                         </button>
                                         <button
+                                            onClick={() => handleResetToDefault(o)}
+                                            className="p-1 text-gray-400 hover:text-amber-600 transition-colors"
+                                            title="重設為預設密碼"
+                                        >
+                                            <KeyRound className="w-4 h-4" />
+                                        </button>
+                                        <button
                                             onClick={() => handleDelete(o.id)}
                                             className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                                             title="刪除"
@@ -239,6 +263,13 @@ const ProbationOfficerDatabase = () => {
                                     title="編輯"
                                 >
                                     <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleResetToDefault(o); }}
+                                    className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                    title="重設為預設密碼"
+                                >
+                                    <KeyRound className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleDelete(o.id); }}

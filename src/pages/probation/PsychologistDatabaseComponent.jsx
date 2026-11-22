@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import Button from '../../components/Button';
-import { Plus, X, Trash2, Edit } from 'lucide-react';
+import { Plus, X, Trash2, Edit, KeyRound } from 'lucide-react';
+
+// 新增帳號與「重設為預設密碼」共用的預設值
+const DEFAULT_PASSWORD = 'psy';
 
 const PsychologistDatabase = () => {
     const [psychologists, setPsychologists] = useState([]);
@@ -45,7 +48,7 @@ const PsychologistDatabase = () => {
         setFormData({
             name: '',
             qualification: '諮商心理師',
-            password: 'psy', // Default for new users
+            password: DEFAULT_PASSWORD, // Default for new users
             contact_info: '',
             is_active: true
         });
@@ -96,7 +99,7 @@ const PsychologistDatabase = () => {
                     .rpc('admin_create_psychologist', {
                         p_name: formData.name,
                         p_qualification: formData.qualification || '諮商心理師',
-                        p_password: formData.password || 'psy',
+                        p_password: formData.password || DEFAULT_PASSWORD,
                         p_contact_info: formData.contact_info || null,
                         p_is_active: formData.is_active
                     });
@@ -123,6 +126,20 @@ const PsychologistDatabase = () => {
             fetchPsychologists();
         } catch (error) {
             alert('刪除失敗: ' + error.message);
+        }
+    };
+
+    const handleResetToDefault = async (target) => {
+        if (!window.confirm(`確定要將「${target.name}」的密碼重設為預設密碼（${DEFAULT_PASSWORD}）嗎？\n請通知該心理師登入後自行修改密碼。`)) return;
+
+        try {
+            const { error } = await supabase
+                .rpc('admin_reset_password_psychologist', { target_id: target.id, new_password: DEFAULT_PASSWORD });
+
+            if (error) throw error;
+            alert(`已將「${target.name}」的密碼重設為預設密碼（${DEFAULT_PASSWORD}），請通知該心理師登入後自行修改。`);
+        } catch (error) {
+            alert('重設失敗: ' + error.message);
         }
     };
 
@@ -178,6 +195,13 @@ const PsychologistDatabase = () => {
                                             <Edit className="w-4 h-4" />
                                         </button>
                                         <button
+                                            onClick={() => handleResetToDefault(p)}
+                                            className="p-1 text-gray-400 hover:text-amber-600 transition-colors"
+                                            title="重設為預設密碼"
+                                        >
+                                            <KeyRound className="w-4 h-4" />
+                                        </button>
+                                        <button
                                             onClick={() => handleDelete(p.id)}
                                             className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                                             title="刪除"
@@ -223,6 +247,13 @@ const PsychologistDatabase = () => {
                                     title="編輯"
                                 >
                                     <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleResetToDefault(p); }}
+                                    className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                    title="重設為預設密碼"
+                                >
+                                    <KeyRound className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}
