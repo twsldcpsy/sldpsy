@@ -146,7 +146,7 @@ const PsychologistDatabase = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-primary">心理師資料庫</h3>
+                <h3 className="text-xl font-bold text-primary">心理服務人員維護</h3>
                 <Button variant="primary" onClick={handleOpenAdd} className="flex items-center gap-1">
                     <Plus className="w-4 h-4" /> 新增心理師
                 </Button>

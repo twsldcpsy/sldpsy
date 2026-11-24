@@ -390,9 +390,31 @@ const BookingManagement = ({
                 is_verified: formData.is_verified
             };
 
-            if (isEditing) {
-                const { error: updateError } = await supabase.from('bookings').update(payload).eq('id', editingId);
+            if (isEditing && fixedPsychologistId) {
+                // 心理師：只能經專用函式修改自己預約的內容（個案、類別、日期時間、地點、備註）；狀態、談話室、核銷等欄位由資料庫忽略
+                const { error: updateError } = await supabase.rpc('psychologist_update_booking', {
+                    p_booking_id: editingId,
+                    p_data: {
+                        juvenile_id: payload.juvenile_id,
+                        guardian_id: payload.guardian_id,
+                        juvenile_name: payload.juvenile_name,
+                        counseling_type: payload.counseling_type,
+                        individual_subject: payload.individual_subject,
+                        joint_attendees_count: payload.joint_attendees_count,
+                        joint_details: payload.joint_details,
+                        includes_juvenile: payload.includes_juvenile,
+                        booking_date: payload.booking_date,
+                        start_time: payload.start_time,
+                        end_time: payload.end_time,
+                        location: payload.location,
+                        notes: payload.notes
+                    }
+                });
                 error = updateError;
+            } else if (isEditing) {
+                // select('id')：0 列被更新（例如被資料庫權限擋下）要視為失敗，不可靜默成功
+                const { data: updated, error: updateError } = await supabase.from('bookings').update(payload).eq('id', editingId).select('id');
+                error = updateError || ((!updated || updated.length === 0) ? new Error('沒有任何資料被更新（可能沒有權限）') : null);
             } else {
                 const { error: insertError } = await supabase.from('bookings').insert([payload]);
                 error = insertError;
@@ -461,8 +483,16 @@ const BookingManagement = ({
             // Optimistic update locally
             setBookings(prev => prev.map(b => b.id === id ? { ...b, [field]: value } : b));
 
-            const { error } = await supabase.from('bookings').update({ [field]: value }).eq('id', id);
-            if (error) throw error;
+            if (fixedPsychologistId && field === 'status') {
+                // 心理師：資料庫只允許他們透過專用函式標記自己預約的狀態（出席／缺席）
+                const { error } = await supabase.rpc('psychologist_update_booking_status', { p_booking_id: id, p_status: value });
+                if (error) throw error;
+            } else {
+                // select('id')：確認真的有資料被更新；被資料庫權限擋下時不會回傳錯誤，只會是 0 列，不能當成成功
+                const { data, error } = await supabase.from('bookings').update({ [field]: value }).eq('id', id).select('id');
+                if (error) throw error;
+                if (!data || data.length === 0) throw new Error('沒有任何資料被更新（可能沒有權限）');
+            }
         } catch (error) {
             console.error('Quick update failed:', error);
             alert('更新失敗，請重新整理頁面');
