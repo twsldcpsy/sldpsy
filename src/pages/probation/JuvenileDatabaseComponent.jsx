@@ -447,6 +447,7 @@ const JuvenileDatabase = () => {
                                                 <option value="處分轉換">處分轉換</option>
                                                 <option value="已無需求">已無需求</option>
                                                 <option value="更換心理師">更換心理師</option>
+                                                <option value="無法配合">無法配合</option>
                                             </select>
                                         </div>
                                     )}
