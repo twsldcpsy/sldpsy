@@ -8,7 +8,7 @@ import { FIELD_TYPES, DEFAULT_PRINT, newField } from '../../utils/reviewFormUtil
 
 const inputCls = 'w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/20 outline-none';
 
-// 運動戒癮團體專案：表單維護（考核表的欄位與匯出列印樣式）。僅專案管理者（與系統管理者）。
+// 運動戒癮團體專案：表單維護（考核表的欄位與匯出列印樣式）。專案成員、專案管理者與系統管理者皆可維護。
 // 每次儲存若有變更就產生新版本；已填寫的資料永遠對應當時的版本。
 const ExFormsManagement = () => {
     const [fields, setFields] = useState([]);

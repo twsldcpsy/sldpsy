@@ -23,8 +23,8 @@ const ExerciseProject = ({ project, isSystemAdmin, officerId, onBack }) => {
         { id: 'writeoff', label: '核銷作業', icon: Receipt },
         // 公告欄維護：僅專案管理者（與系統管理者）
         { id: 'bulletins', label: '公告欄維護', icon: Megaphone, managerOnly: true },
-        // 表單維護：僅專案管理者（與系統管理者）
-        { id: 'forms', label: '表單維護', icon: FileSpreadsheet, managerOnly: true },
+        // 表單維護：專案成員、專案管理者與系統管理者皆可
+        { id: 'forms', label: '表單維護', icon: FileSpreadsheet },
     ].filter(t => !t.managerOnly || canPublish);
 
     return (
@@ -66,7 +66,7 @@ const ExerciseProject = ({ project, isSystemAdmin, officerId, onBack }) => {
                         功能開發中
                     </div>
                 )}
-                {subTab === 'forms' && canPublish && <ExFormsManagement />}
+                {subTab === 'forms' && <ExFormsManagement />}
                 {subTab === 'bulletins' && canPublish && (
                     <BulletinBoardManagement projectId={project.id} ownerId={isSystemAdmin ? null : officerId} staffOnly />
                 )}
