@@ -13,7 +13,7 @@ const Layout = ({ children }) => {
                     <div className="flex justify-between h-16 items-center">
                         <div className="flex items-center gap-3">
                             <BookOpen className="h-8 w-8 text-secondary" />
-                            <span className="font-bold text-xl tracking-wide">臺灣士林地方法院心理諮商預約及管理系統</span>
+                            <span className="font-bold text-sm sm:text-xl tracking-wide leading-tight"><span className="block sm:inline">臺灣士林地方法院</span><span className="block sm:inline">心理諮商預約及專案管理系統</span></span>
                         </div>
                         <div>
                             <Button variant="outline" className="p-2 md:py-1 md:px-4 text-xs md:text-sm flex items-center" onClick={() => navigate('/')}>
