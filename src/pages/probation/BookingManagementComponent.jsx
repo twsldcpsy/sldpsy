@@ -368,6 +368,10 @@ const BookingManagement = ({
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (String(formData.end_time).slice(0, 5) <= String(formData.start_time).slice(0, 5)) {
+            alert('結束時間必須晚於開始時間');
+            return;
+        }
         try {
             let error;
             const payload = {
@@ -1476,7 +1480,7 @@ const BookingManagement = ({
                                                         onChange={e => {
                                                             const newHour = e.target.value;
                                                             const minute = formData.start_time.split(':')[1] || '00';
-                                                            setFormData({ ...formData, start_time: `${newHour}:${minute} ` });
+                                                            setFormData({ ...formData, start_time: `${newHour}:${minute}` });
                                                         }}
                                                     >
                                                         {Array.from({ length: 14 }, (_, i) => i + 8).map(h => (
@@ -1491,7 +1495,7 @@ const BookingManagement = ({
                                                         onChange={e => {
                                                             const newMinute = e.target.value;
                                                             const hour = formData.start_time.split(':')[0] || '09';
-                                                            setFormData({ ...formData, start_time: `${hour}:${newMinute} ` });
+                                                            setFormData({ ...formData, start_time: `${hour}:${newMinute}` });
                                                         }}
                                                     >
                                                         <option value="00">00</option>
@@ -1511,7 +1515,7 @@ const BookingManagement = ({
                                                         onChange={e => {
                                                             const newHour = e.target.value;
                                                             const minute = formData.end_time.split(':')[1] || '00';
-                                                            setFormData({ ...formData, end_time: `${newHour}:${minute} ` });
+                                                            setFormData({ ...formData, end_time: `${newHour}:${minute}` });
                                                         }}
                                                     >
                                                         {Array.from({ length: 14 }, (_, i) => i + 8).map(h => (
@@ -1526,7 +1530,7 @@ const BookingManagement = ({
                                                         onChange={e => {
                                                             const newMinute = e.target.value;
                                                             const hour = formData.end_time.split(':')[0] || '10';
-                                                            setFormData({ ...formData, end_time: `${hour}:${newMinute} ` });
+                                                            setFormData({ ...formData, end_time: `${hour}:${newMinute}` });
                                                         }}
                                                     >
                                                         <option value="00">00</option>

@@ -12,7 +12,7 @@ const Home = () => {
         <div className="flex flex-col items-center justify-center min-h-[80vh] gap-12">
             <div className="text-center space-y-4">
                 <h1 className="text-4xl font-bold text-primary tracking-wider">臺灣士林地方法院</h1>
-                <h2 className="text-2xl font-bold text-secondary">心理諮商預約及管理系統</h2>
+                <h2 className="text-2xl font-bold text-secondary">心理諮商預約及專案管理系統</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl px-4">
@@ -124,13 +124,7 @@ const Home = () => {
                                         v2.0.0 <span className="text-sm font-normal text-gray-500">115/11/24</span>
                                     </h4>
                                     <div className="text-gray-600 mt-1 text-sm leading-relaxed space-y-1">
-                                        <p>系統迎來成立以來最大規模的升級，版本號也跟著進位到 2.0.0，這次的重點如下：</p>
-                                        <ul className="list-disc list-inside pl-2 space-y-1">
-                                            <li>資安強化：登入方式完全不變（仍是選股別或姓名加上密碼）；所有密碼改為加密保存，連管理者也看不到密碼，忘記時只能重設；登入後由系統確認身分，沒登入的人看不到任何資料；連續輸入錯誤密碼會暫時鎖定，保護帳號安全</li>
-                                            <li>全新的「專案」架構：工作人員新增「身分」（保護官、心輔員、保護性社工、測試人員），權限別「管理員」更名為「審閱者」；系統管理者可建立專案，並指派「專案管理者」與「專案成員」；原本的預約、個案、心理服務人員、統計與核銷功能，整合進「心理服務專案」</li>
-                                            <li>新增「運動戒癮團體專案」：參與少年、活動課程、團體介紹頁、工作分配、公告、考核表（可自訂欄位、填寫並列印核章）等功能，專案成員可在「專案權限」中進入使用</li>
-                                            <li>修正心理師預約頁的狀態更新：心理師可以標記自己預約的出席、缺席，也可以編輯自己預約的內容（備註、時間、地點等），重新整理後仍會保留</li>
-                                        </ul>
+                                        <p>系統並未參選但仍改名為「臺灣士林地方法院心理諮商預約及專案管理系統」，大幅升級系統的資安結構，並且為使「運動戒癮團體」、「同理心訓練」順利嫁接實現管理一站化，重整系統架構，並順順順手修正了一些發展危機（BUG）。</p>
                                     </div>
                                 </div>
 
